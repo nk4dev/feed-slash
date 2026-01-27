@@ -3,8 +3,10 @@ export default defineNuxtConfig({
   devServer: {
     port: 3000,
   },
-  css: ['~/assets/global.css'],
-  modules: ["@prisma/nuxt"],
+  modules: ['@nuxtjs/tailwindcss'],
+  tailwindcss: {
+    cssPath: '~/assets/global.css'
+  },
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
 })

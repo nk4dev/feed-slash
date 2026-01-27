@@ -26,3 +26,6 @@ logs
 /app/generated/prisma
 
 /lib/generated/prisma
+
+/prisma/migrations
+/drizzle/meta

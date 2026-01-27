@@ -1,0 +1,162 @@
+<template>
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+    <div class="mb-4 sm:mb-6">
+      <NuxtLink :to="`/f/${feedId}`" class="text-xs sm:text-sm text-blue-600 hover:underline">
+        ← Back to feed
+      </NuxtLink>
+    </div>
+
+    <div v-if="pending" class="text-center py-8 text-gray-500">
+      Loading content...
+    </div>
+
+    <div v-else-if="error" class="p-4 bg-red-50 text-red-700 rounded-md">
+      Failed to load content: {{ error.message }}
+    </div>
+
+    <div v-else-if="!data?.item" class="text-center py-12 bg-gray-50 rounded-lg">
+      Content not found.
+    </div>
+
+    <div v-else>
+      <div class="mb-4 sm:mb-6">
+        <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold mb-2 break-words">
+          {{ data.item.title || data.item.contentUrl }}
+        </h1>
+        <div class="text-xs sm:text-sm text-gray-600">
+          <span v-if="data.item.author">{{ data.item.author }}</span>
+          <span v-if="data.item.author && data.item.publishedAt"> · </span>
+          <span v-if="data.item.publishedAt">{{ new Date(data.item.publishedAt).toLocaleString() }}</span>
+        </div>
+        <div class="mt-2 sm:mt-3 flex gap-2 sm:gap-4 items-center flex-wrap">
+          <a
+            :href="data.item.contentUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-sm text-blue-600 hover:underline"
+          >
+            Open original
+          </a>
+          <button
+            v-if="!sanitizedContent"
+            @click="fetchHtmlContent"
+            :disabled="isFetching"
+            class="text-xs sm:text-sm px-2 sm:px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+          >
+            {{ isFetching ? 'Fetching...' : 'Fetch HTML Content' }}
+          </button>
+          <button
+            v-else
+            @click="fetchHtmlContent"
+            :disabled="isFetching"
+            class="text-xs sm:text-sm px-2 sm:px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+          >
+            {{ isFetching ? 'Refetching...' : 'Refetch Content' }}
+          </button>
+        </div>
+        <div v-if="fetchError" class="mt-2 text-sm text-red-600">
+          {{ fetchError }}
+        </div>
+      </div>
+
+      <!-- Content display with tabs -->
+      <div v-if="sanitizedContent" class="mb-3 sm:mb-4">
+        <div class="flex border-b overflow-x-auto">
+          <button
+            @click="viewMode = 'rendered'"
+            :class="[
+              'px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium whitespace-nowrap',
+              viewMode === 'rendered' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-gray-800'
+            ]"
+          >
+            Rendered HTML
+          </button>
+          <button
+            @click="viewMode = 'source'"
+            :class="[
+              'px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium whitespace-nowrap',
+              viewMode === 'source' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-gray-800'
+            ]"
+          >
+            Source
+          </button>
+        </div>
+      </div>
+
+      <div v-if="sanitizedContent && viewMode === 'rendered'" class="prose prose-sm sm:prose prose-gray max-w-none" v-html="sanitizedContent"></div>
+      <pre v-else-if="sanitizedContent && viewMode === 'source'" class="bg-gray-100 p-3 sm:p-4 rounded-lg overflow-x-auto text-xs sm:text-sm whitespace-pre-wrap break-words">{{ data.item.content }}</pre>
+      <p v-else class="text-sm sm:text-base text-gray-700">
+        {{ data.item.contentSnippet || 'No content available. Click "Fetch HTML Content" to load the full article.' }}
+      </p>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import DOMPurify from 'isomorphic-dompurify';
+
+const route = useRoute();
+const feedId = route.params.id as string;
+const contentId = route.params.contentId as string;
+
+type FeedMeta = {
+  id: number;
+  feedUrl: string;
+  title: string | null;
+  remoteUrl: string | null;
+  description: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type FeedItem = {
+  contentId: number;
+  parentId: number;
+  contentUrl: string;
+  title: string | null;
+  content: string | null;
+  contentSnippet: string | null;
+  author: string | null;
+  publishedAt: string | null;
+};
+
+const { data, pending, error, refresh } = await useFetch<{ feed: FeedMeta; item: FeedItem }>(
+  `/api/feeds/${feedId}/${contentId}`
+);
+
+const viewMode = ref<'rendered' | 'source'>('rendered');
+const isFetching = ref(false);
+const fetchError = ref<string | null>(null);
+
+const sanitizedContent = computed(() => {
+  const raw = data.value?.item?.content ?? '';
+  if (!raw) return '';
+  return DOMPurify.sanitize(raw, {
+    ADD_TAGS: ['article', 'section', 'header', 'footer', 'main', 'aside', 'figure', 'figcaption'],
+    ADD_ATTR: ['class', 'id', 'src', 'alt', 'href', 'target', 'rel'],
+  });
+});
+
+async function fetchHtmlContent() {
+  isFetching.value = true;
+  fetchError.value = null;
+
+  try {
+    await $fetch(`/api/feeds/${feedId}/${contentId}/fetch-html`, {
+      method: 'POST',
+    });
+    // Refresh the data to get updated content
+    await refresh();
+  } catch (err: any) {
+    fetchError.value = err?.data?.statusMessage || err?.message || 'Failed to fetch HTML content';
+  } finally {
+    isFetching.value = false;
+  }
+}
+
+useHead({
+  title: data.value?.item?.title
+    ? `${data.value.item.title} - RSS Content`
+    : 'RSS Content'
+});
+</script>
