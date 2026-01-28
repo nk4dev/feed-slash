@@ -7,9 +7,11 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "deploy": "npx drizzle-kit generate:migration && npx nuxt generate && npx nuxt build"
   },
   "dependencies": {
+    "@clerk/nuxt": "^1.13.15",
     "@nuxt/fonts": "^0.13.0",
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0",

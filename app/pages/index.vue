@@ -61,6 +61,6 @@
 const { data: feeds, pending, error } = await useFetch('/api/feeds');
 
 useHead({
-  title: 'RSS Feeds - Nuxt Feed'
+  title: 'RSS Feeds - Feed Slash',
 });
 </script>

@@ -1,7 +1,7 @@
 import Parser from 'rss-parser';
 import { db } from '~~/lib/db';
 import { feedContent, feedMetaData } from '~~/lib/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 // Atom/RSS parser with custom fields for Atom support
 const parser = new Parser({
@@ -73,17 +73,28 @@ function isAtomFeed(xml: string): boolean {
 }
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event);
-  
-  // Basic validation
-  if (!body.feedUrl) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Feed URL is required',
-    });
-  }
-
   try {
+    const auth = await event.context.auth();
+    console.log('[feeds.post] Auth result:', auth);
+    
+    const { userId } = auth || {};
+    if (!userId) {
+      throw createError({
+        statusCode: 401,
+        statusMessage: 'Unauthorized',
+      });
+    }
+
+    const body = await readBody(event);
+    
+    // Basic validation
+    if (!body.feedUrl) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Feed URL is required',
+      });
+    }
+
     const response = await fetch(body.feedUrl);
     if (!response.ok) {
       throw createError({
@@ -129,10 +140,11 @@ export default defineEventHandler(async (event) => {
     const [existingFeed] = await db
       .select()
       .from(feedMetaData)
-      .where(eq(feedMetaData.feedUrl, body.feedUrl))
+      .where(and(eq(feedMetaData.userId, userId), eq(feedMetaData.feedUrl, body.feedUrl)))
       .limit(1);
 
     const metaValues = {
+      userId,
       feedUrl: body.feedUrl,
       title: feedTitle ?? null,
       remoteUrl: feedLink ?? null,
@@ -226,7 +238,7 @@ export default defineEventHandler(async (event) => {
       await db
         .insert(feedContent)
         .values(items)
-        .onConflictDoNothing({ target: feedContent.contentUrl });
+        .onConflictDoNothing({ target: [feedContent.parentId, feedContent.contentUrl] });
     }
 
     return {
@@ -234,6 +246,9 @@ export default defineEventHandler(async (event) => {
       itemsFetched: items.length,
     };
   } catch (error: any) {
+    // Log the full error for debugging
+    console.error('[feeds.post] Error:', error);
+    
     if (error?.statusCode) {
       throw error;
     }

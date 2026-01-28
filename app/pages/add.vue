@@ -65,4 +65,8 @@ const handleSubmit = async () => {
     pending.value = false;
   }
 };
+
+useHead({
+  title: 'Add New Feed - Feed Slash',
+});
 </script>

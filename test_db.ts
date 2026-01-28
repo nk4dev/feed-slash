@@ -4,7 +4,7 @@ import postgres from 'postgres';
 import { pgTable, serial, text, timestamp, integer } from 'drizzle-orm/pg-core';
 import { feedMetaData } from './lib/schema';
 
-const connectionString = process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/nuxt-rss-feed';
+const connectionString = process.env.FEED_DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/nuxt-feed';
 
 console.log('Connecting to:', connectionString);
 
@@ -15,6 +15,7 @@ async function main() {
 
     console.log('Inserting feed...');
     const result = await db.insert(feedMetaData).values({
+      userId: 'test-user',
       feedUrl: 'https://test-feed.com/rss/2',
       updatedAt: new Date(),
     }).returning();

@@ -51,7 +51,7 @@
             :disabled="isFetching"
             class="text-xs sm:text-sm px-2 sm:px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
           >
-            {{ isFetching ? 'Refetching...' : 'Refetch Content' }}
+            {{ isFetching ? 'Loading...' : 'All Content Load' }}
           </button>
         </div>
         <div v-if="fetchError" class="mt-2 text-sm text-red-600">
@@ -69,7 +69,7 @@
               viewMode === 'rendered' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-gray-800'
             ]"
           >
-            Rendered HTML
+            Rendered HTML 
           </button>
           <button
             @click="viewMode = 'source'"
@@ -83,11 +83,11 @@
         </div>
       </div>
 
-      <div v-if="sanitizedContent && viewMode === 'rendered'" class="prose prose-sm sm:prose prose-gray max-w-none" v-html="sanitizedContent"></div>
+      <div v-if="sanitizedContent && viewMode === 'rendered'" class="prose prose-sm sm:prose prose-gray max-w-2xl" v-html="sanitizedContent"></div>
       <pre v-else-if="sanitizedContent && viewMode === 'source'" class="bg-gray-100 p-3 sm:p-4 rounded-lg overflow-x-auto text-xs sm:text-sm whitespace-pre-wrap break-words">{{ data.item.content }}</pre>
-      <p v-else class="text-sm sm:text-base text-gray-700">
+      <div v-else class="text-sm sm:text-base text-gray-700  mx-2 my-4">
         {{ data.item.contentSnippet || 'No content available. Click "Fetch HTML Content" to load the full article.' }}
-      </p>
+      </div>
     </div>
   </div>
 </template>
@@ -129,7 +129,21 @@ const isFetching = ref(false);
 const fetchError = ref<string | null>(null);
 
 const sanitizedContent = computed(() => {
-  const raw = data.value?.item?.content ?? '';
+  const contentstylecss = `<style>
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+  pre {
+    background-color: #f6f8fa;
+    padding: 0.2em 0.4em;
+    border-radius: 4px;
+    font-family: 'Fira Code', monospace;
+    overflow-x: scroll;
+    max-width: 10vhw;
+  }  
+  </style>`
+  const raw = (data.value?.item?.content ?? '') + contentstylecss;
   if (!raw) return '';
   return DOMPurify.sanitize(raw, {
     ADD_TAGS: ['article', 'section', 'header', 'footer', 'main', 'aside', 'figure', 'figcaption'],
@@ -156,7 +170,7 @@ async function fetchHtmlContent() {
 
 useHead({
   title: data.value?.item?.title
-    ? `${data.value.item.title} - RSS Content`
-    : 'RSS Content'
+    ? `${data.value.item.title} - Feed Slash`
+    : 'RSS Content - Feed Slash'
 });
 </script>

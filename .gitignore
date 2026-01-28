@@ -29,3 +29,5 @@ logs
 
 /prisma/migrations
 /drizzle/meta
+
+certs

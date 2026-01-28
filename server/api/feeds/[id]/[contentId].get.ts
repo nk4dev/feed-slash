@@ -3,24 +3,32 @@ import { feedContent, feedMetaData } from '~~/lib/schema';
 import { and, eq } from 'drizzle-orm';
 
 export default defineEventHandler(async (event) => {
-  const idParam = event.context.params?.id;
-  const contentIdParam = event.context.params?.contentId;
-
-  const id = Number(idParam);
-  const contentId = Number(contentIdParam);
-
-  if (!idParam || Number.isNaN(id) || !contentIdParam || Number.isNaN(contentId)) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Invalid feed or content id',
-    });
-  }
-
   try {
+    const auth = await event.context.auth();
+    const { userId } = auth || {};
+    if (!userId) {
+      throw createError({
+        statusCode: 401,
+        statusMessage: 'Unauthorized',
+      });
+    }
+
+    const idParam = event.context.params?.id;
+    const contentIdParam = event.context.params?.contentId;
+
+    const id = Number(idParam);
+    const contentId = Number(contentIdParam);
+
+    if (!idParam || Number.isNaN(id) || !contentIdParam || Number.isNaN(contentId)) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Invalid feed or content id',
+      });
+    }
     const [feed] = await db
       .select()
       .from(feedMetaData)
-      .where(eq(feedMetaData.id, id))
+      .where(and(eq(feedMetaData.id, id), eq(feedMetaData.userId, userId)))
       .limit(1);
 
     if (!feed) {
@@ -48,6 +56,8 @@ export default defineEventHandler(async (event) => {
       item,
     };
   } catch (error: any) {
+    console.error('[feeds/[id]/[contentId].get] Error:', error);
+    
     if (error?.statusCode) {
       throw error;
     }

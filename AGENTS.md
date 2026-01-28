@@ -1,5 +1,5 @@
 # Nuxt Feed app
-appname f/Nuxt
+appname Feed Slash
 
 A simple Nuxt.js application that displays a feed of articles fetched from an external API.
 
@@ -11,7 +11,7 @@ A simple Nuxt.js application that displays a feed of articles fetched from an ex
 - Nuxt 3
 
 ## Authentication
-- StackAuth
+- Clerk
 
 ## Runtime
 Bun.sh 
