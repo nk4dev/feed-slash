@@ -7,6 +7,11 @@
             <NuxtLink to="/">f/</NuxtLink>
           </h1>
           <nav class="flex gap-3 sm:gap-4">
+
+            <NuxtLink to="/today-digest"
+              class="text-blue-600 px-2 py-2 rounded-md hover:text-blue-800 transition-colors text-sm sm:text-base text-center whitespace-nowrap">
+              Today's Digest
+            </NuxtLink>
             <SignedOut>
               <SignInButton />
               <SignUpButton />
@@ -16,7 +21,6 @@
               <UserButton />
             </SignedIn>
           </nav>
-          
         </div>
       </div>
     </header>
@@ -29,6 +33,7 @@
         <div class="flex justify-center gap-3">
           <NuxtLink to="/precautions">Precautions when using</NuxtLink>
           <NuxtLink to="/privacy">Privacy Policy</NuxtLink>
+          <NuxtLink to="/repo">Repository</NuxtLink>
         </div>
       </div>
     </footer>

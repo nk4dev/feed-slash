@@ -5,7 +5,6 @@ import { desc, eq } from 'drizzle-orm';
 export default defineEventHandler(async (event) => {
   try {
     const auth = await event.context.auth();
-    console.log('[feeds.get] Auth result:', auth);
     
     const { userId } = auth || {};
     if (!userId) {
