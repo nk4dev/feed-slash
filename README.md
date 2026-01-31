@@ -86,40 +86,51 @@ Check out the [deployment documentation](https://nuxt.com/docs/getting-started/d
 
 ## E2E Testing
 
-このプロジェクトではE2Eテストに **Playwright** を使用しています。
+this project uses **Playwright** for end-to-end (E2E) testing.
 
-### テストの実行
+### executing tests
 
 ```bash
-# すべてのE2Eテストを実行
+# execute all E2E tests
 bun run test:e2e
 
-# UIモードで実行（インタラクティブ）
+# UI mode (interactive)
 bun run test:e2e:ui
 
-# ブラウザを表示して実行
+# execute tests in headed mode
 bun run test:e2e:headed
 
-# デバッグモードで実行
+# execute tests in debug mode
 bun run test:e2e:debug
 ```
 
-### テスト構成
+### test structure
 
-テストファイルは `tests/e2e/` ディレクトリに配置されています：
+The test files are located in the `tests/e2e/` directory:
 
-| ファイル | 内容 |
-|---------|------|
-| `home.spec.ts` | ホームページのテスト |
-| `navigation.spec.ts` | ページ間のナビゲーションテスト |
-| `add-feed.spec.ts` | フィード追加フォームのテスト |
-| `static-pages.spec.ts` | 静的ページ（Privacy Policy, Precautions）のテスト |
-| `mobile.spec.ts` | モバイル・レスポンシブデザインのテスト |
+| File | Description |
+| `home.spec.ts` | Home page tests |
+| `navigation.spec.ts` | Page navigation tests |
+| `add-feed.spec.ts` | Add feed form tests |
+| `static-pages.spec.ts` | Static pages (Privacy Policy, Precautions) tests |
+| `mobile.spec.ts` | Mobile/responsive design tests |
 
+### Configuration
+
+Playwright configuration is in `playwright.config.ts`:
+- Test directory: `./tests/e2e`
+- Base URL: `http://localhost:3000`
+- Browser: Chromium
+- Auto-start dev server: Enabled
+| `home.spec.ts` | Home page tests |
+| `navigation.spec.ts` | Page navigation tests |
+| `add-feed.spec.ts` | Add feed form tests |
+| `static-pages.spec.ts` | Static pages (Privacy Policy, Precautions) tests |
+| `mobile.spec.ts` | Mobile/responsive design tests |
 ### 設定
 
-Playwrightの設定は `playwright.config.ts` にあります：
-- テストディレクトリ: `./tests/e2e`
-- ベースURL: `http://localhost:3000`
-- ブラウザ: Chromium
-- 開発サーバー自動起動: 有効
+Playwright configuration is in `playwright.config.ts`:
+- Test directory: `./tests/e2e`
+- Base URL: `http://localhost:3000`
+- Browser: Chromium
+- Development server autostart: Enabled
