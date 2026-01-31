@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, integer, unique } from 'drizzle-orm/pg-core';
+import { integer, pgTable, serial, text, timestamp, unique } from 'drizzle-orm/pg-core';
 
 export const feedMetaData = pgTable('FeedMetaData', {
   id: serial('id').primaryKey(),
@@ -24,4 +24,13 @@ export const feedContent = pgTable('FeedContent', {
   publishedAt: timestamp('publishedAt'),
 }, (t) => ({
   unq: unique().on(t.parentId, t.contentUrl),
+}));
+
+export const bookmarks = pgTable('Bookmarks', {
+  id: serial('id').primaryKey(),
+  userId: text('userId').notNull(),
+  contentId: integer('contentId').references(() => feedContent.contentId).notNull(),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+}, (t) => ({
+  unq: unique().on(t.userId, t.contentId),
 }));

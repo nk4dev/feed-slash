@@ -1,15 +1,17 @@
 <template>
   <div class="max-w-4xl mx-auto px-4 py-8">
     <h1 class="text-3xl font-bold mb-6">Precautions when using</h1>
-    
+
     <div class="prose prose-lg">
       <section class="mb-8">
         <h2 class="text-2xl font-semibold mb-4">Usage Guidelines</h2>
         <ul class="list-disc pl-6 space-y-2">
           <li>This service is provided "as is" without any warranties.</li>
           <li>RSS feeds are fetched from external sources. We are not responsible for the content of those feeds.</li>
-          <li>Please respect the copyright and terms of service of the original content providers.</li>
           <li>Do not use this service for any illegal or unauthorized purpose.</li>
+          <li>
+            Use for the purpose of illegally obtaining paid content is also prohibited.
+          </li>
         </ul>
       </section>
 

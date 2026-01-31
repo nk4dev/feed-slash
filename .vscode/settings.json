@@ -1,0 +1,45 @@
+{
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.fixAll": "explicit",
+        "source.organizeImports": "explicit"
+    },
+    // TypeScript
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "typescript.enablePromptUseWorkspaceTsdk": true,
+    // Nuxt specific
+    "files.associations": {
+        "*.vue": "vue"
+    },
+    // Tailwind CSS IntelliSense
+    "tailwindCSS.experimental.classRegex": [
+        [
+            "class:\\s*?[\"'`]([^\"'`]*).*?[\"'`]",
+            "[\"'`]([^\"'`]*).*?[\"'`]"
+        ]
+    ],
+    // GitHub Copilot
+    "github.copilot.enable": {
+        "*": true,
+        "yaml": true,
+        "plaintext": true,
+        "markdown": true,
+        "vue": true,
+        "typescript": true,
+        "javascript": true
+    },
+    // Exclude from file watcher
+    "files.watcherExclude": {
+        "**/.git/objects/**": true,
+        "**/.git/subtree-cache/**": true,
+        "**/node_modules/**": true,
+        "**/.nuxt/**": true,
+        "**/.output/**": true,
+        "**/dist/**": true
+    },
+    // Vue
+    "volar.takeOverMode.enabled": true,
+    // Bun specific
+    "terminal.integrated.defaultProfile.windows": "PowerShell",
+    "npm.packageManager": "bun"
+}

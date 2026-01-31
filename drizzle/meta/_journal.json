@@ -15,6 +15,13 @@
       "when": 1769500000000,
       "tag": "0001_add_feed_content_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1769744238145,
+      "tag": "0002_bitter_night_thrasher",
+      "breakpoints": true
     }
   ]
 }

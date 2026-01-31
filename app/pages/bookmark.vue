@@ -2,8 +2,8 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <!-- ヘッダー -->
         <div class="mb-6 sm:mb-8">
-            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">{{ formattedDate }}'s Digest</h1>
-            <p class="text-gray-500 mt-1 text-sm sm:text-base">{{ digest?.count || 0 }} articles today</p>
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Bookmarks</h1>
+            <p class="text-gray-500 mt-1 text-sm sm:text-base">{{ bookmarks?.length || 0 }} saved articles</p>
         </div>
 
         <!-- ローディング状態 -->
@@ -13,29 +13,32 @@
 
         <!-- エラー状態 -->
         <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-xl p-6">
-            <p class="text-red-600 font-medium">{{ error.statusMessage || 'Failed to load digest' }}</p>
+            <p class="text-red-600 font-medium">{{ error.statusMessage || 'Failed to load bookmarks' }}</p>
             <p v-if="error.statusCode === 401" class="text-sm text-red-500 mt-2">
-                Please <a href="/sign-in" class="underline font-medium">sign in</a> to view your digest.
+                Please <NuxtLink to="/sign-in" class="underline font-medium">sign in</NuxtLink> to view your bookmarks.
             </p>
         </div>
 
-        <!-- コンテンツ一覧 -->
+        <!-- ブックマーク一覧 -->
         <main v-else>
-            <div v-if="digest?.items?.length === 0" class="text-center py-16 text-gray-500">
-                <div class="text-5xl mb-4">📭</div>
-                <p class="text-xl font-medium">No new articles today</p>
-                <p class="text-sm mt-2">Check back later or add more feeds!</p>
+            <div v-if="displayBookmarks.length === 0" class="text-center py-16 text-gray-500">
+                <div class="text-5xl mb-4">🔖</div>
+                <p class="text-xl font-medium">No bookmarks yet</p>
+                <p class="text-sm mt-2">Save articles from your feeds to read later!</p>
+                <NuxtLink to="/" class="inline-block mt-4 text-blue-600 hover:underline">
+                    Browse your feeds →
+                </NuxtLink>
             </div>
 
             <!-- レスポンシブグリッド -->
             <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                <article v-for="item in articles" :key="item.contentId"
+                <article v-for="item in displayBookmarks" :key="item.id"
                     class="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-200 flex flex-col">
-                    <!-- SNS風カードヘッダー -->
+                    <!-- カードヘッダー -->
                     <div class="p-4 border-b border-gray-100">
                         <div class="flex items-center gap-3">
                             <div
-                                class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
+                                class="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-white font-bold text-sm">
                                 {{ (item.feedTitle || 'F').charAt(0).toUpperCase() }}
                             </div>
                             <div class="flex-1 min-w-0">
@@ -44,7 +47,7 @@
                                 <p class="text-xs text-gray-500 flex items-center gap-1">
                                     <span v-if="item.author" class="truncate">{{ item.author }}</span>
                                     <span v-if="item.author && item.publishedAt">•</span>
-                                    <span v-if="item.publishedAt">{{ formatTime(item.publishedAt) }}</span>
+                                    <span v-if="item.publishedAt">{{ formatDate(item.publishedAt) }}</span>
                                 </p>
                             </div>
                         </div>
@@ -66,20 +69,14 @@
                     <!-- アクションバー -->
                     <div class="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
                         <div class="flex items-center gap-4">
-                            <!-- ブックマークボタン -->
-                            <button @click="toggleBookmark(item)"
-                                class="flex items-center gap-1.5 text-sm transition-colors"
-                                :class="item.isBookmarked ? 'text-yellow-500' : 'text-gray-400 hover:text-yellow-500'"
+                            <!-- ブックマーク解除ボタン -->
+                            <button @click="removeBookmark(item)"
+                                class="flex items-center gap-1.5 text-sm text-yellow-500 hover:text-red-500 transition-colors"
                                 :disabled="item.isLoading">
-                                <svg v-if="item.isBookmarked" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                                 </svg>
-                                <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                                </svg>
-                                <span class="hidden sm:inline">{{ item.isBookmarked ? 'Saved' : 'Save' }}</span>
+                                <span class="hidden sm:inline">{{ item.isLoading ? 'Removing...' : 'Remove' }}</span>
                             </button>
 
                             <!-- 外部リンク -->
@@ -100,6 +97,11 @@
                             Read →
                         </NuxtLink>
                     </div>
+
+                    <!-- ブックマーク日時 -->
+                    <div class="px-4 py-2 bg-gray-50 text-xs text-gray-500">
+                        Saved {{ formatRelativeTime(item.bookmarkedAt) }}
+                    </div>
                 </article>
             </div>
         </main>
@@ -107,7 +109,8 @@
 </template>
 
 <script setup lang="ts">
-interface DigestItem {
+interface BookmarkItem {
+    id: number;
     contentId: number;
     title: string | null;
     contentUrl: string;
@@ -116,65 +119,63 @@ interface DigestItem {
     publishedAt: string | null;
     feedId: number;
     feedTitle: string | null;
-    feedUrl: string;
-    isBookmarked: boolean;
+    bookmarkedAt: string;
     isLoading?: boolean;
 }
 
-const currentDate = new Date();
-const formattedDate = currentDate.toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
+const { data: bookmarks, status, error, refresh } = await useFetch<BookmarkItem[]>('/api/bookmarks', {
+    key: 'user-bookmarks',
 });
 
-const { data: digest, status, error } = await useFetch('/api/feeds/daily', {
-    key: 'daily-digest',
-});
+// リアクティブな表示用リスト
+const displayBookmarks = ref<BookmarkItem[]>([]);
 
-// リアクティブな記事リスト
-const articles = ref<DigestItem[]>([]);
-
-watch(() => digest.value?.items, (items) => {
+watch(() => bookmarks.value, (items) => {
     if (items) {
-        articles.value = items.map(item => ({ ...item, isLoading: false }));
+        displayBookmarks.value = items.map(item => ({ ...item, isLoading: false }));
     }
 }, { immediate: true });
 
-// 時刻フォーマット
-function formatTime(dateStr: string) {
+// 日付フォーマット
+function formatDate(dateStr: string) {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+    });
+}
+
+// 相対時間フォーマット
+function formatRelativeTime(dateStr: string) {
     const date = new Date(dateStr);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-    if (diffHours < 1) {
-        const diffMins = Math.floor(diffMs / (1000 * 60));
-        return `${diffMins}m ago`;
-    } else if (diffHours < 24) {
-        return `${diffHours}h ago`;
-    }
-    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return formatDate(dateStr);
 }
 
-// ブックマークのトグル
-async function toggleBookmark(item: DigestItem) {
+// ブックマーク解除
+async function removeBookmark(item: BookmarkItem) {
     item.isLoading = true;
     try {
-        if (item.isBookmarked) {
-            await $fetch(`/api/bookmarks/${item.contentId}`, { method: 'DELETE' });
-            item.isBookmarked = false;
-        } else {
-            await $fetch(`/api/bookmarks/${item.contentId}`, { method: 'POST' });
-            item.isBookmarked = true;
-        }
+        await $fetch(`/api/bookmarks/${item.contentId}`, { method: 'DELETE' });
+        // リストから削除
+        displayBookmarks.value = displayBookmarks.value.filter(b => b.id !== item.id);
     } catch (err) {
-        console.error('Failed to toggle bookmark:', err);
-    } finally {
+        console.error('Failed to remove bookmark:', err);
         item.isLoading = false;
     }
 }
 
 useHead({
-    title: "Today's Digest - Feed Slash",
+    title: 'Bookmarks - Feed Slash',
 });
 </script>

@@ -29,29 +29,32 @@
           <span v-if="data.item.publishedAt">{{ new Date(data.item.publishedAt).toLocaleString() }}</span>
         </div>
         <div class="mt-2 sm:mt-3 flex gap-2 sm:gap-4 items-center flex-wrap">
-          <a
-            :href="data.item.contentUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="text-sm text-blue-600 hover:underline"
-          >
+          <a :href="data.item.contentUrl" target="_blank" rel="noopener noreferrer"
+            class="text-sm text-blue-600 hover:underline">
             Open original
           </a>
-          <button
-            v-if="!sanitizedContent"
-            @click="fetchHtmlContent"
-            :disabled="isFetching"
-            class="text-xs sm:text-sm px-2 sm:px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-          >
+          <button v-if="!sanitizedContent" @click="fetchHtmlContent" :disabled="isFetching"
+            class="text-xs sm:text-sm px-2 sm:px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap">
             {{ isFetching ? 'Fetching...' : 'Fetch HTML Content' }}
           </button>
-          <button
-            v-else
-            @click="fetchHtmlContent"
-            :disabled="isFetching"
-            class="text-xs sm:text-sm px-2 sm:px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-          >
+          <button v-else @click="fetchHtmlContent" :disabled="isFetching"
+            class="text-xs sm:text-sm px-2 sm:px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap">
             {{ isFetching ? 'Loading...' : 'All Content Load' }}
+          </button>
+          <!-- Bookmark Button -->
+          <button @click="toggleBookmark" :disabled="isBookmarking" :class="[
+            'flex items-center gap-1.5 text-xs sm:text-sm px-2 sm:px-3 py-1 rounded transition-colors whitespace-nowrap',
+            isBookmarked
+              ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
+            isBookmarking ? 'opacity-50 cursor-not-allowed' : ''
+          ]">
+            <svg class="w-4 h-4" :fill="isBookmarked ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2"
+              viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+            </svg>
+            <span>{{ isBookmarking ? 'Saving...' : (isBookmarked ? 'Bookmarked' : 'Bookmark') }}</span>
           </button>
         </div>
         <div v-if="fetchError" class="mt-2 text-sm text-red-600">
@@ -62,29 +65,25 @@
       <!-- Content display with tabs -->
       <div v-if="sanitizedContent" class="mb-3 sm:mb-4">
         <div class="flex border-b overflow-x-auto">
-          <button
-            @click="viewMode = 'rendered'"
-            :class="[
-              'px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium whitespace-nowrap',
-              viewMode === 'rendered' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-gray-800'
-            ]"
-          >
-            Rendered HTML 
+          <button @click="viewMode = 'rendered'" :class="[
+            'px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium whitespace-nowrap',
+            viewMode === 'rendered' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-gray-800'
+          ]">
+            Rendered HTML
           </button>
-          <button
-            @click="viewMode = 'source'"
-            :class="[
-              'px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium whitespace-nowrap',
-              viewMode === 'source' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-gray-800'
-            ]"
-          >
+          <button @click="viewMode = 'source'" :class="[
+            'px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium whitespace-nowrap',
+            viewMode === 'source' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-gray-800'
+          ]">
             Source
           </button>
         </div>
       </div>
 
-      <div v-if="sanitizedContent && viewMode === 'rendered'" class="prose prose-sm sm:prose prose-gray max-w-2xl" v-html="sanitizedContent"></div>
-      <pre v-else-if="sanitizedContent && viewMode === 'source'" class="bg-gray-100 p-3 sm:p-4 rounded-lg overflow-x-auto text-xs sm:text-sm whitespace-pre-wrap break-words">{{ data.item.content }}</pre>
+      <div v-if="sanitizedContent && viewMode === 'rendered'" class="prose prose-sm sm:prose prose-gray max-w-2xl"
+        v-html="sanitizedContent"></div>
+      <pre v-else-if="sanitizedContent && viewMode === 'source'"
+        class="bg-gray-100 p-3 sm:p-4 rounded-lg overflow-x-auto text-xs sm:text-sm whitespace-pre-wrap break-words">{{ data.item.content }}</pre>
       <div v-else class="text-sm sm:text-base text-gray-700  mx-2 my-4">
         {{ data.item.contentSnippet || 'No content available. Click "Fetch HTML Content" to load the full article.' }}
       </div>
@@ -127,6 +126,39 @@ const { data, pending, error, refresh } = await useFetch<{ feed: FeedMeta; item:
 const viewMode = ref<'rendered' | 'source'>('rendered');
 const isFetching = ref(false);
 const fetchError = ref<string | null>(null);
+
+// Bookmark state
+const isBookmarked = ref(false);
+const isBookmarking = ref(false);
+
+// Check bookmark status on load
+onMounted(async () => {
+  try {
+    const bookmarks = await $fetch<{ contentId: number }[]>('/api/bookmarks');
+    isBookmarked.value = bookmarks.some(b => b.contentId === Number(contentId));
+  } catch {
+    // User not logged in or error - ignore
+  }
+});
+
+// Toggle bookmark
+async function toggleBookmark() {
+  isBookmarking.value = true;
+  try {
+    if (isBookmarked.value) {
+      await $fetch(`/api/bookmarks/${contentId}`, { method: 'DELETE' });
+      isBookmarked.value = false;
+    } else {
+      await $fetch(`/api/bookmarks/${contentId}`, { method: 'POST' });
+      isBookmarked.value = true;
+    }
+  } catch (err: any) {
+    console.error('Bookmark error:', err);
+    // Could show a toast here
+  } finally {
+    isBookmarking.value = false;
+  }
+}
 
 const sanitizedContent = computed(() => {
   const contentstylecss = `<style>
