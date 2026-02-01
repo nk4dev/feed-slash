@@ -13,19 +13,19 @@
 
           <!-- Desktop Navigation -->
           <nav class="hidden md:flex items-center gap-4">
-            <NuxtLink to="/today-digest"
-              class="text-blue-600 px-3 py-2 rounded-md hover:text-blue-800 hover:bg-blue-50 transition-colors text-base whitespace-nowrap">
-              Today's Digest
-            </NuxtLink>
-            <NuxtLink to="/bookmark"
-              class="text-blue-600 px-3 py-2 rounded-md hover:text-blue-800 hover:bg-blue-50 transition-colors text-base whitespace-nowrap">
-              Bookmarks
-            </NuxtLink>
             <SignedOut>
               <SignInButton />
               <SignUpButton />
             </SignedOut>
             <SignedIn>
+              <NuxtLink to="/today-digest" @click="mobileMenuOpen = false"
+                class="text-blue-600 rounded-md hover:text-blue-800 hover:bg-blue-50 transition-colors text-base">
+                Today's Digest
+              </NuxtLink>
+              <NuxtLink to="/bookmark" @click="mobileMenuOpen = false"
+                class="text-blue-600 rounded-md hover:text-blue-800 hover:bg-blue-50 transition-colors text-base">
+                Bookmarks
+              </NuxtLink>
               <UserButton />
             </SignedIn>
           </nav>
@@ -51,14 +51,7 @@
           leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 -translate-y-2">
           <div v-if="mobileMenuOpen" class="md:hidden border-t border-gray-100 py-4">
             <nav class="flex flex-col gap-2">
-              <NuxtLink to="/today-digest" @click="mobileMenuOpen = false"
-                class="text-blue-600 px-3 py-3 rounded-md hover:text-blue-800 hover:bg-blue-50 transition-colors text-base">
-                Today's Digest
-              </NuxtLink>
-              <NuxtLink to="/bookmark" @click="mobileMenuOpen = false"
-                class="text-blue-600 px-3 py-3 rounded-md hover:text-blue-800 hover:bg-blue-50 transition-colors text-base">
-                Bookmarks
-              </NuxtLink>
+
 
               <!-- Auth Section -->
               <div class="border-t border-gray-100 mt-2 pt-4 px-3">
@@ -102,10 +95,9 @@
 <script setup lang="ts">
 // Mobile menu state
 const mobileMenuOpen = ref(false);
-//const authstatus = useAuthState();
-
 // Close mobile menu on route change
 const route = useRoute()
+
 watch(() => route.path, () => {
   mobileMenuOpen.value = false
 });
