@@ -121,7 +121,27 @@
 const route = useRoute();
 const feedId = route.params.id as string;
 
-const { data, pending, error, refresh } = await useFetch(`/api/feeds/${feedId}`);
+interface FeedItem {
+    contentId: string
+    title?: string
+    contentUrl: string
+    author?: string
+    publishedAt?: string
+    contentSnippet?: string
+    content?: string
+}
+
+interface FeedData {
+    feed: {
+        title?: string
+        feedUrl: string
+        remoteUrl?: string
+        description?: string
+    }
+    items: FeedItem[]
+}
+
+const { data, pending, error, refresh } = await useFetch<FeedData>(`/api/feeds/${feedId}`);
 
 const isRefreshing = ref(false);
 const refreshMessage = ref<string | null>(null);

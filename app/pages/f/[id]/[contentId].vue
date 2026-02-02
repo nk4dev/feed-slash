@@ -56,6 +56,12 @@
             </svg>
             <span>{{ isBookmarking ? 'Saving...' : (isBookmarked ? 'Bookmarked' : 'Bookmark') }}</span>
           </button>
+          <!-- Bulk Update User Data Button -->
+          <button @click="bulkUpdateUserData" :disabled="isBulkUpdating"
+            class="text-xs sm:text-sm px-2 sm:px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap">
+            {{ isBulkUpdating ? 'Updating...' : 'ユーザーデータ一括更新' }}
+          </button>
+          <span v-if="bulkUpdateMessage" class="text-xs text-green-700 ml-2">{{ bulkUpdateMessage }}</span>
         </div>
         <div v-if="fetchError" class="mt-2 text-sm text-red-600">
           {{ fetchError }}
@@ -131,6 +137,24 @@ const fetchError = ref<string | null>(null);
 const isBookmarked = ref(false);
 const isBookmarking = ref(false);
 
+// Bulk update state
+const isBulkUpdating = ref(false);
+const bulkUpdateMessage = ref('');
+
+async function bulkUpdateUserData() {
+  isBulkUpdating.value = true;
+  bulkUpdateMessage.value = '';
+  try {
+    // APIエンドポイントは適宜変更してください
+    await $fetch('/api/user/bulk-update', { method: 'POST' });
+    bulkUpdateMessage.value = 'ユーザーデータを更新しました';
+  } catch (err: any) {
+    bulkUpdateMessage.value = err?.data?.statusMessage || err?.message || '更新に失敗しました';
+  } finally {
+    isBulkUpdating.value = false;
+  }
+}
+
 // Check bookmark status on load
 onMounted(async () => {
   try {
@@ -163,8 +187,10 @@ async function toggleBookmark() {
 const sanitizedContent = computed(() => {
   const contentstylecss = `<style>
   img {
-    max-width: 100%;
-    height: auto;
+    max-width: 50%;
+  }
+  svg {
+    max-width: 50%;
   }
   pre {
     background-color: #f6f8fa;
