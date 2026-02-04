@@ -13,6 +13,9 @@
 
           <!-- Desktop Navigation -->
           <nav class="hidden md:flex items-center gap-4">
+            <div>
+
+            </div>
             <SignedOut>
               <SignInButton />
               <SignUpButton />
@@ -26,7 +29,16 @@
                 class="text-blue-600 rounded-md hover:text-blue-800 hover:bg-blue-50 transition-colors text-base">
                 Bookmarks
               </NuxtLink>
-              <UserButton />
+              <div class="border-gray-200 bg-blue-400 rounded-full w-7 h-7">
+                <div v-if="isLoaded">
+                  <UserButton />
+                </div>
+                <svg v-else :class="['w-5 h-5 animate-spin']" fill="none" stroke="currentColor" stroke-width="2"
+                  viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </div>
             </SignedIn>
           </nav>
 
@@ -51,8 +63,6 @@
           leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 -translate-y-2">
           <div v-if="mobileMenuOpen" class="md:hidden border-t border-gray-100 py-4">
             <nav class="flex flex-col gap-2">
-
-
               <!-- Auth Section -->
               <div class="border-t border-gray-100 mt-2 pt-4 px-3">
                 <SignedOut>
@@ -94,18 +104,14 @@
 
 <script setup lang="ts">
 // Mobile menu state
+const { userId, isLoaded } = useAuth();
 const mobileMenuOpen = ref(false);
 // Close mobile menu on route change
 const route = useRoute()
+
 
 watch(() => route.path, () => {
   mobileMenuOpen.value = false
 });
 
-const { progress, isLoading, start, finish, clear } = useLoadingIndicator({
-  duration: 2000,
-  throttle: 100,
-  // This is how progress is calculated by default
-  estimatedProgress: (duration, elapsed) => (2 / Math.PI * 100) * Math.atan(elapsed / duration * 100 / 50),
-});
 </script>

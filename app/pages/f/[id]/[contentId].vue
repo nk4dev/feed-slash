@@ -23,6 +23,7 @@
         <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold mb-2 break-words">
           {{ data.item.title || data.item.contentUrl }}
         </h1>
+        website: <NuxtLink :to="`https://${remoteHostDomain}`">{{ remoteHostDomain }}</NuxtLink>
         <div class="text-xs sm:text-sm text-gray-600">
           <span v-if="data.item.author">{{ data.item.author }}</span>
           <span v-if="data.item.author && data.item.publishedAt"> · </span>
@@ -54,12 +55,12 @@
               <path stroke-linecap="round" stroke-linejoin="round"
                 d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
             </svg>
-            <span>{{ isBookmarking ? 'Saving...' : (isBookmarked ? 'Bookmarked' : 'Bookmark') }}</span>
+            <span>{{ isBookmarking ? 'Saving...' : (isBookmarked ? '' : 'Bookmark') }}</span>
           </button>
           <!-- Bulk Update User Data Button -->
           <button @click="bulkUpdateUserData" :disabled="isBulkUpdating"
             class="text-xs sm:text-sm px-2 sm:px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap">
-            {{ isBulkUpdating ? 'Updating...' : 'ユーザーデータ一括更新' }}
+            {{ isBulkUpdating ? 'Updating...' : 'Update' }}
           </button>
           <span v-if="bulkUpdateMessage" class="text-xs text-green-700 ml-2">{{ bulkUpdateMessage }}</span>
         </div>
@@ -141,13 +142,22 @@ const isBookmarking = ref(false);
 const isBulkUpdating = ref(false);
 const bulkUpdateMessage = ref('');
 
+const remoteHostDomain = computed(() => {
+  try {
+    const url = new URL(data.value?.feed.remoteUrl || data.value?.feed.feedUrl || '');
+    return url.hostname;
+  } catch {
+    return '';
+  }
+});
+
 async function bulkUpdateUserData() {
   isBulkUpdating.value = true;
   bulkUpdateMessage.value = '';
   try {
-    // APIエンドポイントは適宜変更してください
+    // Please update the API endpoint as needed
     await $fetch('/api/user/bulk-update', { method: 'POST' });
-    bulkUpdateMessage.value = 'ユーザーデータを更新しました';
+    bulkUpdateMessage.value = 'User data updated successfully';
   } catch (err: any) {
     bulkUpdateMessage.value = err?.data?.statusMessage || err?.message || '更新に失敗しました';
   } finally {
@@ -187,10 +197,10 @@ async function toggleBookmark() {
 const sanitizedContent = computed(() => {
   const contentstylecss = `<style>
   img {
-    max-width: 50%;
+    max-height: 30vh;
   }
   svg {
-    max-width: 50%;
+    max-height: 13vh;
   }
   pre {
     background-color: #f6f8fa;

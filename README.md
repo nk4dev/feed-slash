@@ -127,7 +127,7 @@ Playwright configuration is in `playwright.config.ts`:
 | `add-feed.spec.ts` | Add feed form tests |
 | `static-pages.spec.ts` | Static pages (Privacy Policy, Precautions) tests |
 | `mobile.spec.ts` | Mobile/responsive design tests |
-### 設定
+### Configuration
 
 Playwright configuration is in `playwright.config.ts`:
 - Test directory: `./tests/e2e`
