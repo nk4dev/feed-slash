@@ -44,7 +44,7 @@
             </div>
 
             <div class="mb-4 text-gray-700 text-sm">
-                Welcome, {{ userId }}！
+                <p v-if="user">Welcome, {{ user.username }}!</p>
             </div>
 
             <!-- Refresh All Status Message -->
@@ -96,6 +96,7 @@
 const loading = ref(false);
 const { data: feeds, pending, error, refresh } = await useFetch("/api/feeds");
 const { isLoaded, isSignedIn, userId } = useAuth();
+const { user } = useUser();
 if (!feeds) {
     loading.value = true;
 }

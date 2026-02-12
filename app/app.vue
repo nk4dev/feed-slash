@@ -12,16 +12,15 @@
               <svg viewBox="0 0 240 100" xmlns="http://www.w3.org/2000/svg" class="h-12 w-auto inline-block">
                 <text x="0" y="50" font-size="34" font-weight="bold" fill="#1f2937">Feed / </text>
                 <text x="0" y="100" font-size="34" font-weight="bold" fill="#1f2937">Slash</text>
-
               </svg>
             </NuxtLink>
           </h1>
 
           <!-- Desktop Navigation -->
           <nav class="hidden md:flex items-center gap-4">
-            <div>
-
-            </div>
+            <button @click="() => { }" class="text-gray-400 cursor-not-allowed" disabled>
+              Offline mode
+            </button>
             <SignedOut>
               <SignInButton />
               <SignUpButton />
@@ -67,7 +66,8 @@
         <Transition enter-active-class="transition duration-200 ease-out" enter-from-class="opacity-0 -translate-y-2"
           enter-to-class="opacity-100 translate-y-0" leave-active-class="transition duration-150 ease-in"
           leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 -translate-y-2">
-          <div v-if="mobileMenuOpen" class="md:hidden border-t border-gray-100 py-4">
+          <div v-if="mobileMenuOpen"
+            class="w-full h-full md:hidden border-t border-gray-100 py-4 fixed bg-white left-0 top-16 z-20">
             <nav class="flex flex-col gap-2">
               <!-- Auth Section -->
               <div class="border-t border-gray-100 mt-2 pt-4 px-3">
@@ -78,6 +78,16 @@
                   </div>
                 </SignedOut>
                 <SignedIn>
+                  <div class="flex flex-col gap-3 mb-4">
+                    <NuxtLink to="/today-digest" @click="mobileMenuOpen = false"
+                      class="text-blue-600 rounded-md hover:text-blue-800 hover:bg-blue-50 transition-colors text-base">
+                      Today's Digest
+                    </NuxtLink>
+                    <NuxtLink to="/bookmark" @click="mobileMenuOpen = false"
+                      class="text-blue-600 rounded-md hover:text-blue-800 hover:bg-blue-50 transition-colors text-base">
+                      Bookmarks
+                    </NuxtLink>
+                  </div>
                   <div class="flex items-center gap-3">
                     <span class="text-gray-600 text-sm">Account</span>
                     <UserButton />
@@ -100,7 +110,8 @@
         <div class="flex flex-wrap justify-center gap-3 mt-2">
           <NuxtLink to="/precautions" class="hover:text-gray-700 transition-colors">Precautions when using</NuxtLink>
           <NuxtLink to="/privacy" class="hover:text-gray-700 transition-colors">Privacy Policy</NuxtLink>
-          <NuxtLink to="/repo" class="hover:text-gray-700 transition-colors">Repository</NuxtLink>
+          <NuxtLink to="https://github.com/nk4dev/feed-slash/" class="hover:text-gray-700 transition-colors">
+            Repository</NuxtLink>
         </div>
       </div>
     </footer>
