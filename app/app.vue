@@ -8,7 +8,13 @@
         <div class="flex items-center justify-between py-4">
           <!-- Logo -->
           <h1 class="text-xl sm:text-2xl font-bold text-gray-900">
-            <NuxtLink to="/">f/</NuxtLink>
+            <NuxtLink to="/">
+              <svg viewBox="0 0 240 100" xmlns="http://www.w3.org/2000/svg" class="h-12 w-auto inline-block">
+                <text x="0" y="50" font-size="34" font-weight="bold" fill="#1f2937">Feed / </text>
+                <text x="0" y="100" font-size="34" font-weight="bold" fill="#1f2937">Slash</text>
+
+              </svg>
+            </NuxtLink>
           </h1>
 
           <!-- Desktop Navigation -->

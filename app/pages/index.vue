@@ -105,10 +105,6 @@ useHead({
     title: "RSS Feeds - Feed Slash",
 });
 
-const isRefreshing = ref(false);
-const refreshMessage = ref<string | null>(null);
-const refreshError = ref(false);
-
 // 全フィード更新機能
 const isRefreshingAll = ref(false);
 const refreshAllMessage = ref<string | null>(null);
@@ -134,23 +130,4 @@ async function refreshAllFeeds() {
 }
 
 
-async function refreshFeed() {
-    isRefreshing.value = true;
-    refreshMessage.value = null;
-    refreshError.value = false;
-
-    try {
-        const result = await $fetch('/api/feeds', {
-            method: 'POST',
-            body: { feedUrl: data.value?.feed?.feedUrl },
-        });
-        await refresh();
-        refreshMessage.value = `Feed refreshed! ${(result as any).itemsFetched} items fetched.`;
-    } catch (err: any) {
-        refreshError.value = true;
-        refreshMessage.value = err?.data?.statusMessage || err?.message || 'Failed to refresh feed';
-    } finally {
-        isRefreshing.value = false;
-    }
-}
 </script>
