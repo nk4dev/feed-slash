@@ -1,7 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   nitro: {
-    preset: "cloudflare",
+    preset: "cloudflare-module",
     alias: {
       "cloudflare:sockets": "unenv/mock/proxy",
       "pg-native": "unenv/mock/proxy",
