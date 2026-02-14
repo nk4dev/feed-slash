@@ -8,3 +8,4 @@ directory = ".output/public"
 
 # Environment variables should be set via wrangler secrets or Cloudflare dashboard
 # For local development, use .env files
+

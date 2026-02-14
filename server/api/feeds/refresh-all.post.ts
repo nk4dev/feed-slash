@@ -1,17 +1,85 @@
 import { eq } from 'drizzle-orm';
-import Parser from 'rss-parser';
 import { db } from '~~/lib/db';
 import { feedContent, feedMetaData } from '~~/lib/schema';
 
-// Atom/RSS parser with custom fields for Atom support
-const parser = new Parser({
-    customFields: {
-        item: [
-            ['content', 'atomContent'],
-            ['author', 'atomAuthor', { keepArray: false }],
-        ],
-    },
-});
+function decodeXmlEntities(input: string): string {
+    return input
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'");
+}
+
+function extractTagValue(xml: string, tagName: string): string {
+    const cdataRegex = new RegExp(`<${tagName}[^>]*>\\s*<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>\\s*</${tagName}>`, 'i');
+    const cdataMatch = xml.match(cdataRegex);
+    if (cdataMatch?.[1]) return cdataMatch[1].trim();
+
+    const regex = new RegExp(`<${tagName}[^>]*>([\\s\\S]*?)</${tagName}>`, 'i');
+    const match = xml.match(regex);
+    return match?.[1]?.trim() ?? '';
+}
+
+function extractFirstTagValue(xml: string, tagNames: string[]): string {
+    for (const tagName of tagNames) {
+        const value = extractTagValue(xml, tagName);
+        if (value) return value;
+    }
+    return '';
+}
+
+function parseRssFeed(xml: string) {
+    const channelMatch = xml.match(/<channel[^>]*>([\s\S]*?)<\/channel>/i);
+    const channelXml = channelMatch?.[1] ?? xml;
+
+    const title = decodeXmlEntities(extractTagValue(channelXml, 'title'));
+    const link = decodeXmlEntities(extractTagValue(channelXml, 'link'));
+    const description = decodeXmlEntities(extractTagValue(channelXml, 'description'));
+
+    const items: Array<{
+        title: string;
+        link: string;
+        guid: string;
+        content: string;
+        description: string;
+        author: string;
+        pubDate: string;
+    }> = [];
+
+    const itemRegex = /<item\b[^>]*>([\s\S]*?)<\/item>/gi;
+    let match;
+
+    while ((match = itemRegex.exec(channelXml)) !== null) {
+        const itemXml = match[1];
+        if (!itemXml) continue;
+
+        const itemTitle = decodeXmlEntities(extractTagValue(itemXml, 'title'));
+        const itemLink = decodeXmlEntities(extractTagValue(itemXml, 'link'));
+        const itemGuid = decodeXmlEntities(extractTagValue(itemXml, 'guid'));
+        const itemContent = decodeXmlEntities(extractTagValue(itemXml, 'content:encoded'));
+        const itemDescription = decodeXmlEntities(extractTagValue(itemXml, 'description'));
+        const itemAuthor = decodeXmlEntities(extractFirstTagValue(itemXml, ['dc:creator', 'author']));
+        const itemPubDate = extractFirstTagValue(itemXml, ['pubDate', 'dc:date']);
+
+        items.push({
+            title: itemTitle,
+            link: itemLink,
+            guid: itemGuid,
+            content: itemContent,
+            description: itemDescription,
+            author: itemAuthor,
+            pubDate: itemPubDate,
+        });
+    }
+
+    return {
+        title,
+        link,
+        description,
+        items,
+    };
+}
 
 // Parse Atom feed using native DOMParser-like approach
 function parseAtomFeed(xml: string) {
@@ -87,14 +155,14 @@ async function refreshSingleFeed(feedUrl: string, userId: string, feedId: number
         let feedDescription: string | undefined;
 
         let parsedAtom: ReturnType<typeof parseAtomFeed> | null = null;
-        let parsedRss: Awaited<ReturnType<typeof parser.parseString>> | null = null;
+        let parsedRss: ReturnType<typeof parseRssFeed> | null = null;
 
         if (isAtom) {
             parsedAtom = parseAtomFeed(xml);
             feedTitle = parsedAtom.title;
             feedLink = parsedAtom.link;
         } else {
-            parsedRss = await parser.parseString(xml);
+            parsedRss = parseRssFeed(xml);
             feedTitle = parsedRss.title;
             feedLink = parsedRss.link;
             feedDescription = parsedRss.description;
@@ -137,32 +205,21 @@ async function refreshSingleFeed(feedUrl: string, userId: string, feedId: number
         } else if (parsedRss) {
             items = (parsedRss.items ?? [])
                 .map((item) => {
-                    const contentUrl = item.link || (typeof item.guid === 'string' ? item.guid : undefined);
+                    const contentUrl = item.link || item.guid || undefined;
                     if (!contentUrl) return null;
 
-                    const publishedAt = item.isoDate
-                        ? new Date(item.isoDate)
-                        : item.pubDate
-                            ? new Date(item.pubDate)
-                            : null;
+                    const publishedAt = item.pubDate ? new Date(item.pubDate) : null;
 
-                    const author =
-                        typeof (item as any).creator === 'string'
-                            ? (item as any).creator
-                            : typeof (item as any).author === 'string'
-                                ? (item as any).author
-                                : (item as any).author?.name ?? null;
-
-                    const content =
-                        (item as any)['content:encoded'] || item.content || (item as any).atomContent || null;
+                    const content = item.content || item.description || null;
+                    const contentSnippet = item.description?.substring(0, 200) || content?.substring(0, 200) || null;
 
                     return {
                         parentId: feedId,
                         contentUrl,
                         title: item.title ?? null,
                         content,
-                        contentSnippet: item.contentSnippet ?? null,
-                        author,
+                        contentSnippet,
+                        author: item.author || null,
                         publishedAt,
                     };
                 })
