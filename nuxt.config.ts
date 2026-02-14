@@ -1,19 +1,13 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   nitro: {
-    preset: "cloudflare-pages",
+    preset: "cloudflare",
     alias: {
+      "cloudflare:sockets": "unenv/mock/proxy",
       "pg-native": "unenv/mock/proxy",
     },
     prerender: {
       autoSubfolderIndex: false,
-    },
-    cloudflare: {
-      pages: {
-        routes: {
-          exclude: ["/assets/*"],
-        },
-      },
     },
     compatibilityDate: "2025-07-15",
   },

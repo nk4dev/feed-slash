@@ -2,10 +2,9 @@ name = "feed-slash"
 main = ".output/server/index.mjs"
 compatibility_date = "2025-07-15"
 compatibility_flags = ["nodejs_compat"]
-pages_build_output_dir = ".output/public"
 
-[site]
-bucket = ".output/public"
+[assets]
+directory = ".output/public"
 
 # Environment variables should be set via wrangler secrets or Cloudflare dashboard
 # For local development, use .env files
