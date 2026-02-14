@@ -1,12 +1,19 @@
 # Feed Slash
 
 ## Description
+
 Web based Feed application using Nuxt3
 
+### recommend
+
+Bun.sh as runtime for best performance and development experience. You can also use Node.js if you prefer.
+
 ## Author
+
 [@nk4dev](https://nknighta.me)
 
 ## Tech Stack
+
 - **Framework**: Nuxt 3
 - **Runtime**: Bun.sh
 - **UI**: Tailwind CSS
@@ -16,6 +23,7 @@ Web based Feed application using Nuxt3
 - **E2E Testing**: Playwright
 
 ## Setup
+
 Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
 
 Make sure to install dependencies:
@@ -118,18 +126,21 @@ The test files are located in the `tests/e2e/` directory:
 ### Configuration
 
 Playwright configuration is in `playwright.config.ts`:
+
 - Test directory: `./tests/e2e`
 - Base URL: `http://localhost:3000`
 - Browser: Chromium
 - Auto-start dev server: Enabled
-| `home.spec.ts` | Home page tests |
-| `navigation.spec.ts` | Page navigation tests |
-| `add-feed.spec.ts` | Add feed form tests |
-| `static-pages.spec.ts` | Static pages (Privacy Policy, Precautions) tests |
-| `mobile.spec.ts` | Mobile/responsive design tests |
+  | `home.spec.ts` | Home page tests |
+  | `navigation.spec.ts` | Page navigation tests |
+  | `add-feed.spec.ts` | Add feed form tests |
+  | `static-pages.spec.ts` | Static pages (Privacy Policy, Precautions) tests |
+  | `mobile.spec.ts` | Mobile/responsive design tests |
+
 ### Configuration
 
 Playwright configuration is in `playwright.config.ts`:
+
 - Test directory: `./tests/e2e`
 - Base URL: `http://localhost:3000`
 - Browser: Chromium

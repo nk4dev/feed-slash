@@ -1,9 +1,18 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   nitro: {
+    preset: "cloudflare-pages",
     prerender: {
       autoSubfolderIndex: false,
     },
+    cloudflare: {
+      pages: {
+        routes: {
+          exclude: ["/assets/*"],
+        },
+      },
+    },
+    compatibilityDate: "2025-07-15",
   },
   devServer: {
     port: 3000,

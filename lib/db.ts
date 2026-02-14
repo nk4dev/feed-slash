@@ -1,14 +1,28 @@
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-import * as schema from './schema';
+import { Pool as NeonPool, neonConfig } from "@neondatabase/serverless";
+import { drizzle as drizzleNeon } from "drizzle-orm/neon-serverless";
+import { drizzle as drizzlePg } from "drizzle-orm/node-postgres";
+import { Pool as PgPool } from "pg";
+import * as schema from "./schema";
 
 // Connection string from environment variable or default
-const connectionString = process.env.FEED_DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/nuxt-rss-feed';
+const connectionString =
+  process.env.FEED_DATABASE_URL ||
+  "postgres://postgres:postgres@localhost:5432/nuxt-rss-feed";
 
-// Configure SSL for production databases (Neon requires SSL)
-const client = postgres(connectionString, { 
-  prepare: false,
-  ssl: connectionString.includes('neon.tech') ? 'require' : false,
-});
+const isNeonConnectionString = (() => {
+  try {
+    return new URL(connectionString).hostname.endsWith(".neon.tech");
+  } catch {
+    return connectionString.includes(".neon.tech");
+  }
+})();
 
-export const db = drizzle(client, { schema });
+if (isNeonConnectionString) {
+  neonConfig.poolQueryViaFetch = true;
+}
+
+const dbInstance = isNeonConnectionString
+  ? drizzleNeon(new NeonPool({ connectionString }), { schema })
+  : drizzlePg(new PgPool({ connectionString }), { schema });
+
+export const db = dbInstance;

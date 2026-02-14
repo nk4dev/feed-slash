@@ -39,3 +39,4 @@ logs
 certs
 test-results
 playwright-report
+tmpclaude-*
