@@ -2,6 +2,9 @@
 export default defineNuxtConfig({
   nitro: {
     preset: "cloudflare-pages",
+    alias: {
+      "pg-native": "unenv/mock/proxy",
+    },
     prerender: {
       autoSubfolderIndex: false,
     },
