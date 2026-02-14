@@ -145,3 +145,34 @@ Playwright configuration is in `playwright.config.ts`:
 - Base URL: `http://localhost:3000`
 - Browser: Chromium
 - Development server autostart: Enabled
+
+## Cloudflare Workers Deployment
+
+This project deploys to **Cloudflare Workers** (not Pages).
+
+### Required worker config
+
+- `main = ".output/server/index.mjs"`
+- static assets directory: `.output/public`
+- `compatibility_flags = ["nodejs_compat"]`
+
+### Environment variable parity (Dashboard ⇄ Local)
+
+1. Copy `.dev.vars.example` to `.dev.vars`
+2. In Cloudflare Dashboard, open your Worker settings and copy variables/secrets
+3. Put the same keys into `.dev.vars` for local parity
+
+Example keys used in this project:
+
+- `FEED_DATABASE_URL`
+- `AUTH_DATABASE_URL` (if your remote env still uses this name)
+- `CLERK_PUBLISHABLE_KEY`
+- `CLERK_SECRET_KEY`
+
+### Deploy
+
+```bash
+bun run deploy
+```
+
+This runs `nuxt build` and then `wrangler deploy`, deploying Nitro output directly to Workers.

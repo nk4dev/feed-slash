@@ -40,3 +40,10 @@ certs
 test-results
 playwright-report
 tmpclaude-*
+
+## Cloudflare Workers
+wrangler.jsonc
+wrangler.json
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
