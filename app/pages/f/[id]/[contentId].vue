@@ -20,6 +20,13 @@
 
     <div v-else>
       <div class="mb-4 sm:mb-6">
+
+        <div>
+          <span class="text-sm text-gray-500">Feed:</span>
+          <NuxtLink :to="`/f/${feedId}`" class="text-sm text-blue-600 hover:underline">
+            {{ data.feed.title || data.feed.feedUrl }}
+          </NuxtLink>
+        </div>
         <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold mb-2 break-words">
           {{ data.item.title || data.item.contentUrl }}
         </h1>
@@ -30,7 +37,7 @@
           <span v-if="data.item.publishedAt">{{ new Date(data.item.publishedAt).toLocaleString() }}</span>
         </div>
         <div class="mt-2 sm:mt-3 flex gap-2 sm:gap-4 items-center flex-wrap">
-          <a :href="data.item.contentUrl" target="_blank" rel="noopener noreferrer"
+          <a :href="openOriginalRedirectUrl" target="_blank" rel="noopener noreferrer"
             class="text-sm text-blue-600 hover:underline">
             Open original
           </a>
@@ -92,7 +99,7 @@
       <pre v-else-if="sanitizedContent && viewMode === 'source'"
         class="bg-gray-100 p-3 sm:p-4 rounded-lg overflow-x-auto text-xs sm:text-sm whitespace-pre-wrap break-words">{{ data.item.content }}</pre>
       <div v-else class="text-sm sm:text-base text-gray-700  mx-2 my-4">
-        {{ data.item.contentSnippet || 'No content available. Click "Fetch HTML Content" to load the full article.' }}
+        {{ data.item.contentSnippet || 'No content available. Click "Fetch HTML Content" ' }}
       </div>
     </div>
   </div>
@@ -142,6 +149,7 @@ const isBookmarking = ref(false);
 const isBulkUpdating = ref(false);
 const bulkUpdateMessage = ref('');
 
+// get remote host domain for display and replace auther link
 const remoteHostDomain = computed(() => {
   try {
     const url = new URL(data.value?.feed.remoteUrl || data.value?.feed.feedUrl || '');
@@ -150,6 +158,83 @@ const remoteHostDomain = computed(() => {
     return '';
   }
 });
+
+const contentBaseUrl = computed(() => {
+  const fallbackBase = data.value?.feed.remoteUrl || data.value?.feed.feedUrl || '';
+  try {
+    return new URL(data.value?.item?.contentUrl || fallbackBase);
+  } catch {
+    try {
+      return new URL(fallbackBase);
+    } catch {
+      return null;
+    }
+  }
+});
+
+function toRedirectUrl(absoluteUrl: string): string {
+  if (!/^https?:\/\//i.test(absoluteUrl)) {
+    return absoluteUrl;
+  }
+
+  return `/redirect/url?=${encodeURIComponent(absoluteUrl)}`;
+}
+
+const openOriginalRedirectUrl = computed(() => {
+  const contentUrl = data.value?.item?.contentUrl;
+  if (!contentUrl) return '#';
+  return toRedirectUrl(contentUrl);
+});
+
+function normalizeUrl(rawUrl: string, baseUrl: URL): string {
+  const url = rawUrl.trim();
+  if (!url) return rawUrl;
+  if (url.startsWith('#')) return url;
+  if (/^[a-z][a-z\d+\-.]*:/i.test(url)) return url;
+  if (url.startsWith('//')) return `${baseUrl.protocol}${url}`;
+  if (/^(?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:[/?#:]|$)/i.test(url)) {
+    return `https://${url}`;
+  }
+
+  try {
+    return new URL(url, baseUrl).toString();
+  } catch {
+    return rawUrl;
+  }
+}
+
+function normalizeSrcSet(rawSrcSet: string, baseUrl: URL): string {
+  return rawSrcSet
+    .split(',')
+    .map((entry) => {
+      const trimmed = entry.trim();
+      if (!trimmed) return trimmed;
+
+      const [urlPart, ...descriptorParts] = trimmed.split(/\s+/);
+      if (!urlPart) return trimmed;
+      const normalizedUrl = normalizeUrl(urlPart, baseUrl);
+      const redirectedUrl = toRedirectUrl(normalizedUrl);
+      return descriptorParts.length > 0
+        ? `${redirectedUrl} ${descriptorParts.join(' ')}`
+        : redirectedUrl;
+    })
+    .join(', ');
+}
+
+function normalizeRelativeLinks(content: string): string {
+  const baseUrl = contentBaseUrl.value;
+  if (!baseUrl) return content;
+
+  const normalizedAttributes = content.replace(/\b(href|src)=["']([^"']+)["']/gi, (_match, attribute: string, value: string) => {
+    const normalized = normalizeUrl(value, baseUrl);
+    const redirected = toRedirectUrl(normalized);
+    return `${attribute}="${redirected}"`;
+  });
+
+  return normalizedAttributes.replace(/\bsrcset=["']([^"']+)["']/gi, (_match, value: string) => {
+    return `srcset="${normalizeSrcSet(value, baseUrl)}"`;
+  });
+}
 
 async function bulkUpdateUserData() {
   isBulkUpdating.value = true;
@@ -211,11 +296,12 @@ const sanitizedContent = computed(() => {
     max-width: 10vhw;
   }  
   </style>`
-  const raw = (data.value?.item?.content ?? '') + contentstylecss;
+  const normalizedContent = normalizeRelativeLinks(data.value?.item?.content ?? '');
+  const raw = normalizedContent + contentstylecss;
   if (!raw) return '';
   return DOMPurify.sanitize(raw, {
     ADD_TAGS: ['article', 'section', 'header', 'footer', 'main', 'aside', 'figure', 'figcaption'],
-    ADD_ATTR: ['class', 'id', 'src', 'alt', 'href', 'target', 'rel'],
+    ADD_ATTR: ['class', 'id', 'src', 'srcset', 'alt', 'href', 'target', 'rel'],
   });
 });
 
