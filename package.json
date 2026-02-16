@@ -24,6 +24,7 @@
     "cross-env": "^10.1.0",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.1",
+    "fast-xml-parser": "^5.3.6",
     "isomorphic-dompurify": "^2.35.0",
     "nitro-cloudflare-dev": "^0.2.2",
     "nuxt": "^4.3.0",

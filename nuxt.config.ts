@@ -6,6 +6,14 @@ export default defineNuxtConfig({
       "cloudflare:sockets": "unenv/mock/proxy",
       "pg-native": "unenv/mock/proxy",
     },
+    // Ensure runtime-only dependency is bundled for Cloudflare
+    externals: {
+      inline: ["fast-xml-parser"]
+    },
+    // Make sure Nitro includes it as a build dependency so it gets inlined
+    buildDependencies: {
+      inline: ["fast-xml-parser"]
+    },
     prerender: {
       autoSubfolderIndex: false,
     },
