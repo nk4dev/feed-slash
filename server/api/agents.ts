@@ -3,36 +3,42 @@ import { db } from '~~/lib/db';
 import { feedContent, feedMetaData } from '~~/lib/schema';
 
 export default defineEventHandler(async (event) => {
-  try {
-    const auth = await event.context.auth();
-    const { userId } = auth || {};
+  const query = getQuery(event);
 
-    if (!userId) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: 'Unauthorized',
-      });
+  // Allow CORS for external API consumers
+  setResponseHeaders(event, {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  });
+  if (getMethod(event) === 'OPTIONS') return '';
+
+  try {
+    const token = query.token as string | undefined;
+
+    if (!token) {
+      return { message: 'Usage: /api/agents?token=YOUR_TOKEN&userId=YOUR_USER_ID&feedId=OPTIONAL' };
     }
 
-    // Optional query parameter: ?feedId=<number>
-    const query = getQuery(event);
-    const feedIdParam = query.feedId ? Number(query.feedId) : null;
+    // Validate token against env var (no Clerk session required)
+    const apiToken = process.env.NUXT_API_TOKEN;
+    if (!apiToken || token !== apiToken) {
+      throw createError({ statusCode: 401, statusMessage: 'Invalid token' });
+    }
 
+    // Optional filters
+    const userId = query.userId as string | undefined;
+    const feedIdParam = query.feedId ? Number(query.feedId) : null;
     if (feedIdParam !== null && Number.isNaN(feedIdParam)) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: 'Invalid feedId parameter',
-      });
+      throw createError({ statusCode: 400, statusMessage: 'Invalid feedId parameter' });
     }
 
     // Build where conditions
-    const conditions = [eq(feedMetaData.userId, userId)];
-    if (feedIdParam !== null) {
-      conditions.push(eq(feedMetaData.id, feedIdParam));
-    }
+    const conditions = [];
+    if (userId) conditions.push(eq(feedMetaData.userId, userId));
+    if (feedIdParam !== null) conditions.push(eq(feedMetaData.id, feedIdParam));
 
     // Fetch feed contents joined with metadata
-    const items = await db
+    const q = db
       .select({
         contentId: feedContent.contentId,
         title: feedContent.title,
@@ -43,8 +49,8 @@ export default defineEventHandler(async (event) => {
         feedTitle: feedMetaData.title,
       })
       .from(feedContent)
-      .innerJoin(feedMetaData, eq(feedContent.parentId, feedMetaData.id))
-      .where(and(...conditions))
+      .innerJoin(feedMetaData, eq(feedContent.parentId, feedMetaData.id));
+    const items = await (conditions.length ? q.where(and(...conditions)) : q)
       .orderBy(desc(feedContent.publishedAt), desc(feedContent.contentId));
 
     // Build compact plain text (AI-optimized, token-saving)
@@ -59,15 +65,7 @@ export default defineEventHandler(async (event) => {
     return lines.join('\n');
   } catch (error: any) {
     console.error('[agents] Error:', error);
-
-    if (error?.statusCode) {
-      throw error;
-    }
-
-    throw createError({
-      statusCode: 500,
-      statusMessage: 'Failed to fetch agent feed',
-      data: error.message,
-    });
+    if (error?.statusCode) throw error;
+    throw createError({ statusCode: 500, statusMessage: 'Failed to fetch agent feed', data: error.message });
   }
 });
