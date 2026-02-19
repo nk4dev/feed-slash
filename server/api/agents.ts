@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
     const token = query.token as string | undefined;
 
     if (!token) {
-      return { message: 'Usage: /api/agents?token=YOUR_TOKEN&userId=YOUR_USER_ID&feedId=OPTIONAL' };
+      return { message: 'Usage: /api/agents?token=YOUR_TOKEN&userId=YOUR_USER_ID&feedId=OPTIONAL', version: '0.0.1' };
     }
 
     // Validate token against env var (no Clerk session required)
