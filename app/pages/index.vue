@@ -80,11 +80,16 @@
                         Added:
                         {{ new Date(feed.createdAt).toLocaleDateString() }}
                     </div>
-                    <div class="flex gap-2">
+                    <div class="flex items-center gap-3">
                         <a :href="feed.feedUrl" target="_blank" rel="noopener noreferrer"
                             class="text-sm text-blue-600 hover:underline">
                             Visit Source
                         </a>
+                        <button @click="deleteFeed(feed.id, feed.title || feed.feedUrl)"
+                            :disabled="deletingFeedId === feed.id"
+                            class="text-sm text-red-600 hover:underline disabled:opacity-50 disabled:cursor-not-allowed">
+                            {{ deletingFeedId === feed.id ? 'Deleting...' : 'Delete' }}
+                        </button>
                     </div>
                 </div>
             </div>
@@ -110,6 +115,7 @@ useHead({
 const isRefreshingAll = ref(false);
 const refreshAllMessage = ref<string | null>(null);
 const refreshAllError = ref(false);
+const deletingFeedId = ref<number | null>(null);
 
 async function refreshAllFeeds() {
     isRefreshingAll.value = true;
@@ -127,6 +133,31 @@ async function refreshAllFeeds() {
         refreshAllMessage.value = err?.data?.statusMessage || err?.message || 'Failed to refresh feeds';
     } finally {
         isRefreshingAll.value = false;
+    }
+}
+
+async function deleteFeed(feedId: number, feedLabel: string) {
+    if (deletingFeedId.value !== null) {
+        return;
+    }
+
+    const confirmed = window.confirm(`Delete feed "${feedLabel}"? This action cannot be undone.`);
+    if (!confirmed) {
+        return;
+    }
+
+    deletingFeedId.value = feedId;
+
+    try {
+        await $fetch(`/api/feeds/${feedId}`, {
+            method: 'DELETE',
+        });
+        await refresh();
+    } catch (err: any) {
+        const message = err?.data?.statusMessage || err?.message || 'Failed to delete feed';
+        window.alert(message);
+    } finally {
+        deletingFeedId.value = null;
     }
 }
 

@@ -26,13 +26,9 @@
               <SignUpButton />
             </SignedOut>
             <SignedIn>
-              <NuxtLink to="/today-digest" @click="mobileMenuOpen = false"
-                class="text-blue-600 rounded-md hover:text-blue-800 hover:bg-blue-50 transition-colors text-base">
-                Today's Digest
-              </NuxtLink>
-              <NuxtLink to="/bookmark" @click="mobileMenuOpen = false"
-                class="text-blue-600 rounded-md hover:text-blue-800 hover:bg-blue-50 transition-colors text-base">
-                Bookmarks
+              <NuxtLink v-for="url in headerUrls" :key="url.path" :to="url.path" @click="mobileMenuOpen = false"
+                class="text-blue-600">
+                {{ url.name }}
               </NuxtLink>
               <div class="border-gray-200 bg-blue-400 rounded-full w-7 h-7">
                 <div v-if="isLoaded">
@@ -79,13 +75,9 @@
                 </SignedOut>
                 <SignedIn>
                   <div class="flex flex-col gap-3 mb-4">
-                    <NuxtLink to="/today-digest" @click="mobileMenuOpen = false"
+                    <NuxtLink v-for="url in headerUrls" :key="url.path" :to="url.path" @click="mobileMenuOpen = false"
                       class="text-blue-600 rounded-md hover:text-blue-800 hover:bg-blue-50 transition-colors text-base">
-                      Today's Digest
-                    </NuxtLink>
-                    <NuxtLink to="/bookmark" @click="mobileMenuOpen = false"
-                      class="text-blue-600 rounded-md hover:text-blue-800 hover:bg-blue-50 transition-colors text-base">
-                      Bookmarks
+                      {{ url.name }}
                     </NuxtLink>
                   </div>
                   <div class="flex items-center gap-3">
@@ -110,7 +102,8 @@
         <div class="flex flex-wrap justify-center gap-3 mt-2">
           <NuxtLink to="/precautions" class="hover:text-gray-700 transition-colors">Precautions when using</NuxtLink>
           <NuxtLink to="/privacy" class="hover:text-gray-700 transition-colors">Privacy Policy</NuxtLink>
-          <NuxtLink to="https://github.com/nk4dev/feed-slash/" class="hover:text-gray-700 transition-colors">
+          <NuxtLink to="https://github.com/nk4dev/feed-slash/" target="_blank"
+            class="hover:text-gray-700 transition-colors">
             Repository</NuxtLink>
         </div>
       </div>
@@ -126,6 +119,12 @@ const mobileMenuOpen = ref(false);
 // Close mobile menu on route change
 const route = useRoute()
 
+// header urls list
+const headerUrls = [
+  { name: "Today's Digest", path: "/today-digest" },
+  { name: "Bookmarks", path: "/bookmark" },
+  { name: "Settings", path: "/settings" },
+];
 
 watch(() => route.path, () => {
   mobileMenuOpen.value = false

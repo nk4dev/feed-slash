@@ -1,6 +1,6 @@
 import { desc, eq } from 'drizzle-orm';
 import { db } from '~~/lib/db';
-import { bookmarks, feedContent, feedMetaData } from '~~/lib/schema';
+import { bookmarkFolders, bookmarks, feedContent, feedMetaData } from '~~/lib/schema';
 
 export default defineEventHandler(async (event) => {
     try {
@@ -26,10 +26,13 @@ export default defineEventHandler(async (event) => {
                 feedId: feedMetaData.id,
                 feedTitle: feedMetaData.title,
                 bookmarkedAt: bookmarks.createdAt,
+                folderId: bookmarks.folderId,
+                folderName: bookmarkFolders.name,
             })
             .from(bookmarks)
             .innerJoin(feedContent, eq(bookmarks.contentId, feedContent.contentId))
             .innerJoin(feedMetaData, eq(feedContent.parentId, feedMetaData.id))
+            .leftJoin(bookmarkFolders, eq(bookmarks.folderId, bookmarkFolders.id))
             .where(eq(bookmarks.userId, userId))
             .orderBy(desc(bookmarks.createdAt));
 
