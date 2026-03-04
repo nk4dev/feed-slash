@@ -1,16 +1,6 @@
 import { db } from '~~/lib/db';
 import { apiTokens } from '~~/lib/schema';
-
-function generateToken(length: number): string {
-    const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    let result = '';
-    const bytes = new Uint8Array(length);
-    crypto.getRandomValues(bytes);
-    for (let i = 0; i < length; i++) {
-        result += chars[bytes[i]! % chars.length];
-    }
-    return result;
-}
+import { generateApiToken, getTokenPreview, hashApiToken, parseTokenExpiry } from '~~/server/utils/apiToken';
 
 export default defineEventHandler(async (event) => {
     const auth = await event.context.auth();
@@ -19,11 +9,25 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 401, statusMessage: 'Unauthorized' });
     }
 
-    const body = await readBody(event).catch(() => ({}));
-    const label = body?.label as string | undefined;
-    const token = generateToken(30);
+    const body = await readBody<{ label?: string; expiresAt?: string; ttlDays?: number }>(event).catch(() => ({}));
+    const label = typeof body?.label === 'string' && body.label.trim().length > 0 ? body.label.trim() : undefined;
+    const token = generateApiToken(40);
+    const tokenHash = hashApiToken(token);
+    const tokenPrefix = getTokenPreview(token);
+    const expiresAt = parseTokenExpiry(body);
 
-    const [row] = await db.insert(apiTokens).values({ userId, token, label }).returning();
+    const [row] = await db
+        .insert(apiTokens)
+        .values({ userId, tokenHash, tokenPrefix, label, expiresAt })
+        .returning();
 
-    return { id: row!.id, token: row!.token, label: row!.label, createdAt: row!.createdAt };
+    return {
+        id: row!.id,
+        token,
+        tokenPreview: row!.tokenPrefix,
+        label: row!.label,
+        createdAt: row!.createdAt,
+        expiresAt: row!.expiresAt,
+        lastUsedAt: row!.lastUsedAt,
+    };
 });

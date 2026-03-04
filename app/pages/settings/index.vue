@@ -1,15 +1,12 @@
 <template>
-    <NuxtLink to="/settings/account" class="block px-4 py-2 rounded hover:bg-gray-100 transition-colors">
-        Account Settings
-    </NuxtLink>
-    <NuxtLink to="/settings/agent-api" class="block px-4 py-2 rounded hover:bg-gray-100 transition-colors">
-        Agent API
+    <NuxtLink v-for="url in pageLists" :key="url.path" :to="url.path" class="w-1/2 hover:bg-blue-200 p-2">
+        {{ url.name }}
     </NuxtLink>
 </template>
 <script setup lang="ts">
 const pageLists = [
-    { name: "Account Settings", path: "/settings/account" },
     { name: "Agent API", path: "/settings/agent-api" },
+    { name: "API Keys", path: "/settings/api-key" },
 ];
 useHead({
     title: "Settings - Feed Slash",

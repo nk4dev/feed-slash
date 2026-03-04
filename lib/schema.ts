@@ -79,9 +79,13 @@ export const bookmarks = pgTable(
 export const apiTokens = pgTable("ApiTokens", {
   id: serial("id").primaryKey(),
   userId: text("userId").notNull(),
-  token: text("token").notNull().unique(),
+  token: text("token").unique(),
+  tokenHash: text("tokenHash").unique(),
+  tokenPrefix: text("tokenPrefix"),
   label: text("label"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
+  expiresAt: timestamp("expiresAt"),
+  lastUsedAt: timestamp("lastUsedAt"),
 });
 
 export * from "../server/database/schema";

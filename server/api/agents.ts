@@ -1,6 +1,7 @@
 import { and, desc, eq } from 'drizzle-orm';
 import { db } from '~~/lib/db';
 import { apiTokens, feedContent, feedMetaData } from '~~/lib/schema';
+import { getTokenPreview, hashApiToken } from '~~/server/utils/apiToken';
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
@@ -19,11 +20,51 @@ export default defineEventHandler(async (event) => {
       return { message: 'Usage: /api/agents?token=YOUR_TOKEN&feedId=OPTIONAL', version: '0.0.2' };
     }
 
-    // Validate token against DB
-    const [tokenRow] = await db.select().from(apiTokens).where(eq(apiTokens.token, token)).limit(1);
+    const tokenHash = hashApiToken(token);
+
+    let [tokenRow] = await db
+      .select()
+      .from(apiTokens)
+      .where(eq(apiTokens.tokenHash, tokenHash))
+      .limit(1);
+
+    // Legacy plaintext fallback for old tokens. On success, backfill hash metadata.
+    if (!tokenRow) {
+      const [legacyTokenRow] = await db
+        .select()
+        .from(apiTokens)
+        .where(eq(apiTokens.token, token))
+        .limit(1);
+      if (legacyTokenRow) {
+        await db
+          .update(apiTokens)
+          .set({
+            tokenHash,
+            tokenPrefix: legacyTokenRow.tokenPrefix || getTokenPreview(token),
+            token: null,
+          })
+          .where(eq(apiTokens.id, legacyTokenRow.id));
+        tokenRow = {
+          ...legacyTokenRow,
+          tokenHash,
+          tokenPrefix: legacyTokenRow.tokenPrefix || getTokenPreview(token),
+          token: null,
+        };
+      }
+    }
+
     if (!tokenRow) {
       throw createError({ statusCode: 401, statusMessage: 'Invalid token' });
     }
+
+    if (tokenRow.expiresAt && tokenRow.expiresAt.getTime() < Date.now()) {
+      throw createError({ statusCode: 401, statusMessage: 'Token expired' });
+    }
+
+    await db
+      .update(apiTokens)
+      .set({ lastUsedAt: new Date() })
+      .where(eq(apiTokens.id, tokenRow.id));
 
     const userId = tokenRow.userId;
 

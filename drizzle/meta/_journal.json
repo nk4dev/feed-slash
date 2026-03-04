@@ -29,6 +29,13 @@
       "when": 1772150400000,
       "tag": "0004_add_bookmark_folders",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1772582400000,
+      "tag": "0005_agent_api_token_security",
+      "breakpoints": true
     }
   ]
 }

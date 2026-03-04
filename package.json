@@ -5,7 +5,8 @@
   "version": "0.2.2",
   "scripts": {
     "dev": "dotenv -e .env -- nuxt dev --host",
-    "dev:cloud": "dotenv -e .env.cloud -- nuxt dev --host",
+    "dev:cloud": "dotenv -e .env.prod -- nuxt dev --host",
+    "drizzle:cloud": "dotenv -e .dev.var -- drizzle-kit push",
     "build": "nuxt build",
     "generate": "nuxt generate",
     "preview": "bun run build && wrangler dev",

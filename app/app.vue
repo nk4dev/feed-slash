@@ -92,8 +92,10 @@
       </div>
     </header>
 
-    <main class="pb-8">
-      <NuxtPage />
+    <main class="pb-8 px-2 sm:px-4 lg:px-8 mt-6">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <NuxtPage />
+      </div>
     </main>
 
     <footer class="bg-white border-t mt-8">
