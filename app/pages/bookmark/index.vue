@@ -1,15 +1,33 @@
 <template>
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <div class="max-w-8xl mx-auto px-4 sm:px-5 lg:px-6 py-6 sm:py-8">
         <!-- ヘッダー -->
         <div class="mb-6 sm:mb-8">
-            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Bookmarks</h1>
-            <p class="text-gray-500 mt-1 text-sm sm:text-base">{{ bookmarks?.length || 0 }} saved articles</p>
+            <h1 class="page-title text-gray-900">Bookmarks</h1>
+            <p class="page-subtitle mt-1">{{ bookmarks?.length || 0 }} saved articles</p>
         </div>
-        <div>
+        <div class="flex flex-wrap gap-3 mb-6">
             <NuxtLink to="/bookmark/folder"
-                class="inline-block mb-6 px-4 py-2  text-white bg-blue-600 text-sm sm:text-base">
+                class="inline-block px-4 py-2 text-white bg-blue-600 text-sm sm:text-base rounded-lg hover:bg-blue-700 transition-colors">
                 📁 Manage Folders
             </NuxtLink>
+        </div>
+
+        <!-- フォルダフィルター -->
+        <div v-if="folderList && folderList.length > 0" class="flex flex-wrap gap-2 mb-6">
+            <button @click="selectedFolderId = undefined"
+                class="px-3 py-1.5 text-sm rounded-full border transition-colors"
+                :class="selectedFolderId === undefined ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'">
+                All
+            </button>
+            <button @click="selectedFolderId = null" class="px-3 py-1.5 text-sm rounded-full border transition-colors"
+                :class="selectedFolderId === null ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'">
+                Uncategorized
+            </button>
+            <button v-for="folder in folderList" :key="folder.id" @click="selectedFolderId = folder.id"
+                class="px-3 py-1.5 text-sm rounded-full border transition-colors"
+                :class="selectedFolderId === folder.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'">
+                📁 {{ folder.name }}
+            </button>
         </div>
 
         <!-- ローディング状態 -->
@@ -27,7 +45,7 @@
 
         <!-- ブックマーク一覧 -->
         <main v-else>
-            <div v-if="displayBookmarks.length === 0" class="text-center py-16 text-gray-500">
+            <div v-if="filteredBookmarks.length === 0" class="text-center py-16 page-subtitle">
                 <div class="text-5xl mb-4">🔖</div>
                 <p class="text-xl font-medium">No bookmarks yet</p>
                 <p class="text-sm mt-2">Save articles from your feeds to read later!</p>
@@ -38,8 +56,8 @@
 
             <!-- レスポンシブグリッド -->
             <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                <article v-for="item in displayBookmarks" :key="item.id"
-                    class="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-200 flex flex-col">
+                <article v-for="item in filteredBookmarks" :key="item.id"
+                    class="page-card overflow-hidden hover:shadow-lg transition-all duration-200 flex flex-col">
                     <!-- カードヘッダー -->
                     <div class="p-4 border-b border-gray-100">
                         <div class="flex items-center gap-3">
@@ -50,7 +68,7 @@
                             <div class="flex-1 min-w-0">
                                 <p class="font-semibold text-gray-900 truncate text-sm">{{ item.feedTitle ||
                                     'UnknownFeed' }}</p>
-                                <p class="text-xs text-gray-500 flex items-center gap-1">
+                                <p class="compact-label text-gray-500 flex items-center gap-1">
                                     <span v-if="item.author" class="truncate">{{ item.author }}</span>
                                     <span v-if="item.author && item.publishedAt">•</span>
                                     <span v-if="item.publishedAt">{{ formatDate(item.publishedAt) }}</span>
@@ -67,9 +85,21 @@
                                 {{ item.title || 'Untitled' }}
                             </NuxtLink>
                         </h2>
-                        <p v-if="item.contentSnippet" class="text-gray-600 text-sm line-clamp-3 leading-relaxed">
+                        <p v-if="item.contentSnippet" class="content-text line-clamp-3">
                             {{ item.contentSnippet }}
                         </p>
+                    </div>
+
+                    <!-- フォルダ移動 -->
+                    <div v-if="folderList && folderList.length > 0" class="px-4 py-2 border-t border-gray-100">
+                        <select :value="item.folderId ?? ''"
+                            @change="moveToFolder(item, ($event.target as HTMLSelectElement).value)"
+                            class="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 text-gray-600 bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <option value="">Uncategorized</option>
+                            <option v-for="folder in folderList" :key="folder.id" :value="folder.id">
+                                📁 {{ folder.name }}
+                            </option>
+                        </select>
                     </div>
 
                     <!-- アクションバー -->
@@ -105,8 +135,9 @@
                     </div>
 
                     <!-- ブックマーク日時 -->
-                    <div class="px-4 py-2 bg-gray-50 text-xs text-gray-500">
-                        Saved {{ formatRelativeTime(item.bookmarkedAt) }}
+                    <div class="px-4 py-2 bg-gray-50 text-xs text-gray-500 flex items-center justify-between">
+                        <span>Saved {{ formatRelativeTime(item.bookmarkedAt) }}</span>
+                        <span v-if="item.folderName" class="text-blue-500">📁 {{ item.folderName }}</span>
                     </div>
                 </article>
             </div>
@@ -115,6 +146,12 @@
 </template>
 
 <script setup lang="ts">
+interface FolderItem {
+    id: number;
+    name: string;
+    bookmarkCount: number;
+}
+
 interface BookmarkItem {
     id: number;
     contentId: number;
@@ -126,12 +163,21 @@ interface BookmarkItem {
     feedId: number;
     feedTitle: string | null;
     bookmarkedAt: string;
+    folderId: number | null;
+    folderName: string | null;
     isLoading?: boolean;
 }
 
 const { data: bookmarks, status, error, refresh } = await useFetch<BookmarkItem[]>('/api/bookmarks', {
     key: 'user-bookmarks',
 });
+
+const { data: folderList } = await useFetch<FolderItem[]>('/api/bookmark-folders', {
+    key: 'bookmark-folders-filter',
+});
+
+// undefined = all, null = uncategorized, number = specific folder
+const selectedFolderId = ref<number | null | undefined>(undefined);
 
 // リアクティブな表示用リスト
 const displayBookmarks = ref<BookmarkItem[]>([]);
@@ -141,6 +187,16 @@ watch(() => bookmarks.value, (items) => {
         displayBookmarks.value = items.map(item => ({ ...item, isLoading: false }));
     }
 }, { immediate: true });
+
+const filteredBookmarks = computed(() => {
+    if (selectedFolderId.value === undefined) {
+        return displayBookmarks.value;
+    }
+    if (selectedFolderId.value === null) {
+        return displayBookmarks.value.filter(b => !b.folderId);
+    }
+    return displayBookmarks.value.filter(b => b.folderId === selectedFolderId.value);
+});
 
 // 日付フォーマット
 function formatDate(dateStr: string) {
@@ -173,11 +229,27 @@ async function removeBookmark(item: BookmarkItem) {
     item.isLoading = true;
     try {
         await $fetch(`/api/bookmarks/${item.contentId}`, { method: 'DELETE' });
-        // リストから削除
         displayBookmarks.value = displayBookmarks.value.filter(b => b.id !== item.id);
     } catch (err) {
         console.error('Failed to remove bookmark:', err);
         item.isLoading = false;
+    }
+}
+
+// フォルダ移動
+async function moveToFolder(item: BookmarkItem, value: string) {
+    const folderId = value === '' ? null : parseInt(value);
+    try {
+        await $fetch(`/api/bookmarks/${item.contentId}`, {
+            method: 'PATCH',
+            body: { folderId },
+        });
+        item.folderId = folderId;
+        item.folderName = folderId
+            ? folderList.value?.find(f => f.id === folderId)?.name || null
+            : null;
+    } catch (err) {
+        console.error('Failed to move bookmark:', err);
     }
 }
 

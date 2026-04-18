@@ -1,6 +1,7 @@
 import { and, desc, eq } from 'drizzle-orm';
 import { db } from '~~/lib/db';
-import { feedContent, feedMetaData } from '~~/lib/schema';
+import { apiTokens, feedContent, feedMetaData } from '~~/lib/schema';
+import { getTokenPreview, hashApiToken } from '~~/server/utils/apiToken';
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
@@ -16,29 +17,69 @@ export default defineEventHandler(async (event) => {
     const token = query.token as string | undefined;
 
     if (!token) {
-      return { message: 'Usage: /api/agents?token=YOUR_TOKEN&userId=YOUR_USER_ID&feedId=OPTIONAL', version: '0.0.1' };
+      return { message: 'Usage: /api/agents?token=YOUR_TOKEN&feedId=OPTIONAL', version: '0.0.2' };
     }
 
-    // Validate token against env var (no Clerk session required)
-    const apiToken = process.env.NUXT_API_TOKEN;
-    if (!apiToken || token !== apiToken) {
+    const tokenHash = hashApiToken(token);
+
+    let [tokenRow] = await db
+      .select()
+      .from(apiTokens)
+      .where(eq(apiTokens.tokenHash, tokenHash))
+      .limit(1);
+
+    // Legacy plaintext fallback for old tokens. On success, backfill hash metadata.
+    if (!tokenRow) {
+      const [legacyTokenRow] = await db
+        .select()
+        .from(apiTokens)
+        .where(eq(apiTokens.token, token))
+        .limit(1);
+      if (legacyTokenRow) {
+        await db
+          .update(apiTokens)
+          .set({
+            tokenHash,
+            tokenPrefix: legacyTokenRow.tokenPrefix || getTokenPreview(token),
+            token: null,
+          })
+          .where(eq(apiTokens.id, legacyTokenRow.id));
+        tokenRow = {
+          ...legacyTokenRow,
+          tokenHash,
+          tokenPrefix: legacyTokenRow.tokenPrefix || getTokenPreview(token),
+          token: null,
+        };
+      }
+    }
+
+    if (!tokenRow) {
       throw createError({ statusCode: 401, statusMessage: 'Invalid token' });
     }
 
+    if (tokenRow.expiresAt && tokenRow.expiresAt.getTime() < Date.now()) {
+      throw createError({ statusCode: 401, statusMessage: 'Token expired' });
+    }
+
+    await db
+      .update(apiTokens)
+      .set({ lastUsedAt: new Date() })
+      .where(eq(apiTokens.id, tokenRow.id));
+
+    const userId = tokenRow.userId;
+
     // Optional filters
-    const userId = query.userId as string | undefined;
     const feedIdParam = query.feedId ? Number(query.feedId) : null;
     if (feedIdParam !== null && Number.isNaN(feedIdParam)) {
       throw createError({ statusCode: 400, statusMessage: 'Invalid feedId parameter' });
     }
 
     // Build where conditions
-    const conditions = [];
-    if (userId) conditions.push(eq(feedMetaData.userId, userId));
+    const conditions = [eq(feedMetaData.userId, userId)];
     if (feedIdParam !== null) conditions.push(eq(feedMetaData.id, feedIdParam));
 
     // Fetch feed contents joined with metadata
-    const q = db
+    const items = await db
       .select({
         contentId: feedContent.contentId,
         title: feedContent.title,
@@ -49,8 +90,8 @@ export default defineEventHandler(async (event) => {
         feedTitle: feedMetaData.title,
       })
       .from(feedContent)
-      .innerJoin(feedMetaData, eq(feedContent.parentId, feedMetaData.id));
-    const items = await (conditions.length ? q.where(and(...conditions)) : q)
+      .innerJoin(feedMetaData, eq(feedContent.parentId, feedMetaData.id))
+      .where(and(...conditions))
       .orderBy(desc(feedContent.publishedAt), desc(feedContent.contentId));
 
     // Build compact plain text (AI-optimized, token-saving)

@@ -46,6 +46,19 @@ export const feedContent = pgTable(
   }),
 );
 
+export const bookmarkFolders = pgTable(
+  "BookmarkFolders",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("userId").notNull(),
+    name: text("name").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (t) => ({
+    unq: unique().on(t.userId, t.name),
+  }),
+);
+
 export const bookmarks = pgTable(
   "Bookmarks",
   {
@@ -54,6 +67,8 @@ export const bookmarks = pgTable(
     contentId: integer("contentId")
       .references(() => feedContent.contentId)
       .notNull(),
+    folderId: integer("folderId")
+      .references(() => bookmarkFolders.id, { onDelete: "set null" }),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
   },
   (t) => ({
@@ -61,4 +76,17 @@ export const bookmarks = pgTable(
   }),
 );
 
-export * from "~~/server/database/schema";
+export const apiTokens = pgTable("ApiTokens", {
+  id: serial("id").primaryKey(),
+  userId: text("userId").notNull(),
+  token: text("token").unique(),
+  tokenHash: text("tokenHash").unique(),
+  tokenPrefix: text("tokenPrefix"),
+  label: text("label"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  expiresAt: timestamp("expiresAt"),
+  lastUsedAt: timestamp("lastUsedAt"),
+});
+
+export * from "../server/database/schema";
+
