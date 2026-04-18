@@ -12,6 +12,153 @@
     font-family: 'LINE Seed JP', sans-serif;
 }
 
+body {
+    font-size: clamp(15px, 0.35vw + 14px, 16px);
+    line-height: 1.7;
+    letter-spacing: 0.01em;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+}
+
+p,
+li,
+dd,
+dt {
+    line-height: 1.75;
+}
+
+a {
+    text-decoration-thickness: 0.08em;
+    text-underline-offset: 0.15em;
+}
+
+button,
+input,
+select,
+textarea {
+    font: inherit;
+    line-height: inherit;
+}
+
+button {
+    letter-spacing: 0.01em;
+}
+
+html,
+body,
+#__nuxt {
+    min-height: 100%;
+}
+
+body {
+    background-color: #f9fafb;
+    color: #111827;
+    transition: background-color 180ms ease, color 180ms ease;
+}
+
+.page-title {
+    font-size: clamp(1.5rem, 1vw + 1.25rem, 2.5rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+}
+
+.page-subtitle {
+    font-size: clamp(0.9rem, 0.25vw + 0.85rem, 1rem);
+    color: #6b7280;
+}
+
+.page-card {
+    border-radius: 1rem;
+    border: 1px solid #e5e7eb;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
+}
+
+.content-text {
+    font-size: 0.98rem;
+    line-height: 1.8;
+}
+
+.compact-label {
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    letter-spacing: 0.02em;
+}
+
+html.dark body {
+    background-color: #030712;
+    color: #f3f4f6;
+}
+
+html.dark {
+    color-scheme: dark;
+}
+
+html.dark .text-gray-900 {
+    color: #f9fafb;
+}
+
+html.dark .text-gray-800 {
+    color: #f3f4f6;
+}
+
+html.dark .text-gray-700 {
+    color: #e5e7eb;
+}
+
+html.dark .text-gray-600 {
+    color: #d1d5db;
+}
+
+html.dark .text-gray-500 {
+    color: #9ca3af;
+}
+
+html.dark .bg-white {
+    background-color: #111827;
+}
+
+html.dark .bg-gray-50 {
+    background-color: #111827;
+}
+
+html.dark .bg-gray-100 {
+    background-color: #1f2937;
+}
+
+html.dark .border-gray-100 {
+    border-color: #1f2937;
+}
+
+html.dark .border-gray-200 {
+    border-color: #374151;
+}
+
+html.dark .page-subtitle {
+    color: #9ca3af;
+}
+
+html.dark .page-card {
+    border-color: #374151;
+    background: rgba(17, 24, 39, 0.92);
+}
+
+html.dark .content-text {
+    color: #e5e7eb;
+}
+
 /* Global Loading Animation */
 @keyframes slideInWidth {
     0% {

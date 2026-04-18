@@ -47,11 +47,14 @@
                     </a>
                     <button
                         @click="refreshFeed"
-                        :disabled="isRefreshing"
+                        :disabled="isRefreshing || isOfflineMode"
                         class="text-xs sm:text-sm px-2 sm:px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {{ isRefreshing ? 'Refreshing...' : 'Refresh Feed' }}
                     </button>
+                </div>
+                <div v-if="isOfflineMode" class="mt-2 text-sm text-amber-700">
+                    Offline mode: showing cached feed content.
                 </div>
                 <div v-if="refreshMessage" :class="['mt-2 text-sm', refreshError ? 'text-red-600' : 'text-green-600']">
                     {{ refreshMessage }}
@@ -118,6 +121,8 @@
 </template>
 
 <script setup lang="ts">
+import { useOfflineMode } from '../../../composables/useOfflineMode';
+
 const route = useRoute();
 const feedId = route.params.id as string;
 
@@ -141,13 +146,57 @@ interface FeedData {
     items: FeedItem[]
 }
 
-const { data, pending, error, refresh } = await useFetch<FeedData>(`/api/feeds/${feedId}`);
+const feedCacheKey = `feeds:detail:${feedId}`;
+const { isOfflineMode, readCache, writeCache, getCacheSavedAt } = useOfflineMode();
+const { data, pending, error, refresh } = await useFetch<FeedData>(`/api/feeds/${feedId}`, {
+    immediate: false,
+    default: () => readCache<FeedData | null>(feedCacheKey, null),
+});
+
+watch(data, (nextData) => {
+    if (nextData) {
+        writeCache(feedCacheKey, nextData);
+    }
+}, { deep: true });
+
+onMounted(async () => {
+    if (isOfflineMode.value) {
+        data.value = readCache<FeedData | null>(feedCacheKey, null);
+        return;
+    }
+
+    await refresh();
+});
+
+watch(isOfflineMode, async (offline) => {
+    if (offline) {
+        data.value = readCache<FeedData | null>(feedCacheKey, null);
+        return;
+    }
+
+    await refresh();
+});
+
+watch(error, () => {
+    if (isOfflineMode.value) {
+        data.value = readCache<FeedData | null>(feedCacheKey, null);
+    }
+});
 
 const isRefreshing = ref(false);
 const refreshMessage = ref<string | null>(null);
 const refreshError = ref(false);
 
 async function refreshFeed() {
+    if (isOfflineMode.value) {
+        refreshError.value = true;
+        const savedAt = getCacheSavedAt(feedCacheKey);
+        refreshMessage.value = savedAt
+            ? `Offline mode is active. Cached data saved at ${new Date(savedAt).toLocaleString()}.`
+            : 'Offline mode is active. Connect to refresh this feed.';
+        return;
+    }
+
     isRefreshing.value = true;
     refreshMessage.value = null;
     refreshError.value = false;

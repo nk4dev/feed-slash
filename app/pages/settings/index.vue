@@ -1,6 +1,8 @@
 <template>
-    <NuxtLink v-for="url in pageLists" :key="url.path" :to="url.path" class="w-1/2 hover:bg-blue-200 p-2">
-        {{ url.name }}
+    <NuxtLink v-for="url in pageLists" :key="url.path" :to="url.path">
+        <div class="w-3/4 m-auto bg-blue-100 hover:bg-blue-200 p-2 my-4">
+            {{ url.name }}
+        </div>
     </NuxtLink>
 </template>
 <script setup lang="ts">

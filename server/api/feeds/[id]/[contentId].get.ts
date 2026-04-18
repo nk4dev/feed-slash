@@ -1,10 +1,27 @@
+import { and, eq } from 'drizzle-orm';
 import { db } from '~~/lib/db';
 import { feedContent, feedMetaData } from '~~/lib/schema';
-import { and, eq } from 'drizzle-orm';
 
 export default defineEventHandler(async (event) => {
   try {
-    const auth = await event.context.auth();
+    const authFn = event.context.auth;
+    if (typeof authFn !== 'function') {
+      throw createError({
+        statusCode: 401,
+        statusMessage: 'Unauthorized',
+      });
+    }
+
+    let auth: Awaited<ReturnType<typeof authFn>> | null = null;
+    try {
+      auth = await authFn();
+    } catch {
+      throw createError({
+        statusCode: 401,
+        statusMessage: 'Unauthorized',
+      });
+    }
+
     const { userId } = auth || {};
     if (!userId) {
       throw createError({
@@ -57,7 +74,7 @@ export default defineEventHandler(async (event) => {
     };
   } catch (error: any) {
     console.error('[feeds/[id]/[contentId].get] Error:', error);
-    
+
     if (error?.statusCode) {
       throw error;
     }

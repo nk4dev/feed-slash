@@ -1,9 +1,9 @@
 <template>
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <div class="max-w-8xl mx-auto px-4 sm:px-5 lg:px-6 py-6 sm:py-8">
         <!-- ヘッダー -->
         <div class="mb-6 sm:mb-8">
-            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Bookmarks</h1>
-            <p class="text-gray-500 mt-1 text-sm sm:text-base">{{ bookmarks?.length || 0 }} saved articles</p>
+            <h1 class="page-title text-gray-900">Bookmarks</h1>
+            <p class="page-subtitle mt-1">{{ bookmarks?.length || 0 }} saved articles</p>
         </div>
         <div class="flex flex-wrap gap-3 mb-6">
             <NuxtLink to="/bookmark/folder"
@@ -45,7 +45,7 @@
 
         <!-- ブックマーク一覧 -->
         <main v-else>
-            <div v-if="filteredBookmarks.length === 0" class="text-center py-16 text-gray-500">
+            <div v-if="filteredBookmarks.length === 0" class="text-center py-16 page-subtitle">
                 <div class="text-5xl mb-4">🔖</div>
                 <p class="text-xl font-medium">No bookmarks yet</p>
                 <p class="text-sm mt-2">Save articles from your feeds to read later!</p>
@@ -57,7 +57,7 @@
             <!-- レスポンシブグリッド -->
             <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 <article v-for="item in filteredBookmarks" :key="item.id"
-                    class="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-200 flex flex-col">
+                    class="page-card overflow-hidden hover:shadow-lg transition-all duration-200 flex flex-col">
                     <!-- カードヘッダー -->
                     <div class="p-4 border-b border-gray-100">
                         <div class="flex items-center gap-3">
@@ -68,7 +68,7 @@
                             <div class="flex-1 min-w-0">
                                 <p class="font-semibold text-gray-900 truncate text-sm">{{ item.feedTitle ||
                                     'UnknownFeed' }}</p>
-                                <p class="text-xs text-gray-500 flex items-center gap-1">
+                                <p class="compact-label text-gray-500 flex items-center gap-1">
                                     <span v-if="item.author" class="truncate">{{ item.author }}</span>
                                     <span v-if="item.author && item.publishedAt">•</span>
                                     <span v-if="item.publishedAt">{{ formatDate(item.publishedAt) }}</span>
@@ -85,7 +85,7 @@
                                 {{ item.title || 'Untitled' }}
                             </NuxtLink>
                         </h2>
-                        <p v-if="item.contentSnippet" class="text-gray-600 text-sm line-clamp-3 leading-relaxed">
+                        <p v-if="item.contentSnippet" class="content-text line-clamp-3">
                             {{ item.contentSnippet }}
                         </p>
                     </div>
